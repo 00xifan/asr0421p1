@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "asr0421p1 (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "asr0421p1 (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
