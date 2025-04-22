@@ -6,7 +6,7 @@
     xmlns:local="using:asr0421p1.ASR"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    mc:Ignorable="d" 
     Title="ASRWindow">
     <Grid Width="600" Height="300" Background="#222222">
         <Grid.Resources>
@@ -23,8 +23,9 @@
         </Grid.Resources>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
-            <RowDefinition Height="100"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!--翻译方向选择区域-->
@@ -54,99 +55,36 @@
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
 
-                    <!--播放按钮-->
+                    <!--开始录音按钮-->
 
-                    <Button Grid.Column="1" Content="▶" FontSize="12" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center">
+                    <Button Content="▶" FontSize="12" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"
+                             Click="StartRecording"  x:Name="btnStart" Visibility="Visible">
 
                     </Button>
+                    <!--停止录音按钮-->
+                    <Button x:Name="btnStop" Content="||" Width="35" Height="35" Margin="10,0" Click="StopRecording" Visibility="Collapsed"/>
 
 
                     <!--文档按钮-->
 
-                    <Button Grid.Column="2" Content="s" FontSize="14" Width="35" Height="35" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"/>
+                    <Button Content="s" FontSize="14" Width="35" Height="35" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"/>
 
 
                     <!--关闭按钮-->
 
-                    <Button Grid.Column="3" Content="✕" FontSize="14" FontWeight="ExtraBold" Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" />
+                    <Button Content="✕" FontSize="14" FontWeight="ExtraBold" Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
+                            Click="CloseButton_Click"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
 
-            <TextBlock  Foreground="#FFFFFF"   Text="This is the transcribed text from the audio.This is the transcribed text from the audio.">
-          <!--<Run Foreground="#FFFFFF" FontSize="18">This is the transcribed text from the audio.This is the transcribed text from the audio.</Run>
-          <LineBreak/>
-          <Run Foreground="#FFFFFF" FontSize="18">这是音频转写的文本 这是音频转写的文本</Run>-->
-            </TextBlock>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <TextBox x:Name="txtResult" IsReadOnly="True" TextWrapping="Wrap" 
+                     FontSize="16" Background="Transparent" BorderThickness="0"/>
+        </ScrollViewer>
 
-        </StackPanel>
 
     </Grid>
 
-
-    <!--<Grid>
-        -->
-    <!-- 顶部工具栏 -->
-    <!--
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        -->
-    <!-- 顶部工具栏 -->
-    <!--
-        <Grid Grid.Row="0" Background="#222831" Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            -->
-    <!-- 左侧语言选择 -->
-    <!--
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Foreground="#FFFFFF" FontSize="18" Margin="5">英语</TextBlock>
-                <TextBlock Foreground="#FFFFFF" FontSize="18" Margin="5">&gt;</TextBlock>
-                <TextBlock Foreground="#FFFFFF" FontSize="18" Margin="5">中文</TextBlock>
-            </StackPanel>
-
-            -->
-    <!-- 右侧按钮 -->
-    <!--
-            <StackPanel Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                -->
-    <!-- 播放按钮 -->
-    <!--
-                <Button Grid.Column="1" Content="▶" FontSize="18" Width="35" Height="35" Margin="5" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center">
-                 
-                </Button>
-
-                -->
-    <!-- 文档按钮 -->
-    <!--
-                <Button Grid.Column="2" Content="_bboxrcd" FontSize="18" Width="35" Height="35" Margin="5" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"/>
-
-                -->
-    <!-- 关闭按钮 -->
-    <!--
-                <Button Grid.Column="3" Content="✕" FontSize="18" Width="35" Height="35" Margin="5" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" />
-            </StackPanel>
-        </Grid>
-
-        -->
-    <!-- 中间文本区域 -->
-    <!--
-        <Grid Grid.Row="1" Background="#222831" Margin="10">
-            <TextBlock >
-                <Run Foreground="#FFFFFF" FontSize="18">This is the transcribed text from the audio.This is the transcribed text from the audio.</Run>
-                <LineBreak/>
-                <Run Foreground="#FFFFFF" FontSize="18">这是音频转写的文本 这是音频转写的文本</Run>
-            </TextBlock>
-        </Grid>
-    </Grid>-->
 </Window>
