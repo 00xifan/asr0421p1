@@ -22,6 +22,7 @@ public class ASRService : IDisposable
         _ws.Options.SetRequestHeader("X-Api-App-Key", _appKey);
         _ws.Options.SetRequestHeader("X-Api-Access-Key", _accessKey);
         _ws.Options.SetRequestHeader("X-Api-Resource-Id", "volc.bigasr.sauc.duration");
+        _ws.Options.SetRequestHeader("X-Api-Connect-Id", "67ee89ba-7050-4c04-a3d7-ac61a63499b1");
 
         await _ws.ConnectAsync(
             new Uri("wss://openspeech.bytedance.com/api/v3/sauc/bigmodel"),
