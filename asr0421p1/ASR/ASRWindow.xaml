@@ -58,14 +58,14 @@
                     <!--开始录音按钮-->
 
                     <Button Content="▶" FontSize="12" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"
-                             Click="StartRecording"  x:Name="btnStart" Visibility="Visible">
+                             Click="StartRecording"  x:Name="btnStart" Visibility="Visible"/>
 
-                    </Button>
+
                     <!--停止录音按钮-->
                     <Button x:Name="btnStop" Content="||" Width="35" Height="35" Margin="10,0" Click="StopRecording" Visibility="Collapsed"/>
 
 
-                    <!--文档按钮-->
+                    <!--Smart按钮-->
 
                     <Button Content="s" FontSize="14" Width="35" Height="35" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"/>
 
@@ -80,7 +80,7 @@
 
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <TextBox x:Name="txtResult" IsReadOnly="True" TextWrapping="Wrap" Background="Aquamarine"
+            <TextBox x:Name="txtResult" IsReadOnly="True" TextWrapping="Wrap" Foreground="Wheat"
                      FontSize="16" Background="Transparent" BorderThickness="0"/>
         </ScrollViewer>
 
