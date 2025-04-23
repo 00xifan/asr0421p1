@@ -11,7 +11,7 @@
     <Grid Width="600" Height="300" Background="#222222">
         <Grid.Resources>
             <!--自定义字体样式-->
-            <Style x:Key="TextFont" TargetType="TextBlock">
+            <Style x:Key="TextFontStyle" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="White"/>
                 <Setter Property="FontSize" Value="18"/>
             </Style>
@@ -61,7 +61,7 @@
 
 
                     <!--停止录音按钮-->
-                    <Button x:Name="btnStop" Content="ll" Width="35" Height="35" Margin="10,0" 
+                    <Button x:Name="btnStop" Content="l l" FontWeight="ExtraBlack" Width="35" Height="35" BorderThickness="0" VerticalAlignment="Center"
                             Click="StopRecording" Visibility="Collapsed"/>
 
 
@@ -70,7 +70,7 @@
 
 
                     <!--关闭按钮-->
-                    <Button Content="✕" FontSize="14" FontWeight="ExtraBold" Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
+                    <Button Content="✕" FontSize="16" FontWeight="ExtraBold" Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
                             Click="CloseButton_Click"/>
                 </StackPanel>
             </Grid>
@@ -78,7 +78,7 @@
 
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <TextBox x:Name="txtResult" IsReadOnly="True" TextWrapping="Wrap" Foreground="Wheat" 
+            <TextBox x:Name="txtResult" IsReadOnly="True" TextWrapping="Wrap" Foreground="Wheat" HorizontalAlignment="Center"
                      FontSize="16" Background="Transparent" BorderThickness="0"/>
         </ScrollViewer>
 

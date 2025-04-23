@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using asr0421p1.Services;
+using Microsoft.UI.Windowing;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -25,6 +26,7 @@ namespace asr0421p1.ASR
     public sealed partial class ASRWindow : Window
     {
         private ASRWindowVm _asrWindowVm;
+        private AppWindow appWindow;
         private readonly ASRService _asrService = new();
         private AudioRecorder _recorder;
         private bool _isRecording = false;
@@ -33,6 +35,11 @@ namespace asr0421p1.ASR
         {
             this.InitializeComponent();
             _asrWindowVm = new ASRWindowVm();
+
+            
+            this.ExtendsContentIntoTitleBar = true;
+            this.SetTitleBar(null);
+
 
             InitializeRecorder();
             UpdateButtonStates();
