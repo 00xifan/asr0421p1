@@ -6,9 +6,9 @@
     xmlns:local="using:asr0421p1.ASR"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" 
+    mc:Ignorable="d" x:Name="_AsrWindow_" 
     Title="ASRWindow">
-    <Grid Width="600" Height="300" Background="#222222">
+    <Grid Width="610" Height="300" Background="#222222" x:Name="_MainGrid_">
         <Grid.Resources>
             <!--自定义字体样式-->
             <Style x:Key="TextFont" TargetType="TextBlock">

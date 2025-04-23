@@ -13,6 +13,10 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using asr0421p1.Services;
+using WinUIEx;
+using Microsoft.UI.Windowing;
+using Microsoft.UI;
+using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -34,10 +38,38 @@ namespace asr0421p1.ASR
             this.InitializeComponent();
             _asrWindowVm = new ASRWindowVm();
 
+            // 设置窗口大小
+            this.SetWindowSize(_MainGrid_.Width, _MainGrid_.Height);
+
+            // 禁用窗口边框
+            this.ExtendsContentIntoTitleBar = true;
+            this.SetTitleBar(null);
+
+            // 禁用窗口调整大小
+            this.SetIsResizable(false);
+
+            // 隐藏最小化、最大化和关闭按钮
+            SetWindowButtonsVisibility(false, false, false);
+
             InitializeRecorder();
             UpdateButtonStates();
 
         }
+        
+        private void SetWindowButtonsVisibility(bool minimize, bool maximize, bool close)
+        {
+            var hwnd = WindowNative.GetWindowHandle(this);
+            var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
+            var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+            if (appWindow != null)
+            {
+                var titleBar = appWindow.TitleBar;
+                titleBar.ExtendsContentIntoTitleBar = true;
+                titleBar.PreferredHeightOption = TitleBarHeightOption.Collapsed;
+                titleBar.ButtonBackgroundColor = Colors.Transparent;
+            }
+        }
+
         private void InitializeRecorder()
         {
             _recorder = new AudioRecorder(_asrService);
