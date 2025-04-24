@@ -6,9 +6,10 @@
     xmlns:local="using:asr0421p1.ASR"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" x:Name="_AsrWindow_" 
+    mc:Ignorable="d" 
+    x:Name="_AsrWindow_" 
     Title="ASRWindow">
-    <Grid Width="620" Height="300" Background="#222222" x:Name="_MainGrid_">
+    <Grid Background="#222222" x:Name="_MainGrid_">
         <Grid.Resources>
             <!--自定义字体样式-->
             <Style x:Key="TextFontStyle" TargetType="TextBlock">
@@ -31,32 +32,29 @@
         </Grid.RowDefinitions>
 
         <!--翻译方向选择区域-->
-        <StackPanel Margin="10"
-                    VerticalAlignment="Center"
-                    Orientation="Horizontal">
-            <Grid>
+        <Grid  Margin="10" x:Name="_GridFirst_"
+                    VerticalAlignment="Center">
+        
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="180"/>
-                    <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="*" MinWidth="180"/>
+                    <ColumnDefinition Width="Auto" MinWidth="200"/>
                 </Grid.ColumnDefinitions>
 
 
-                <ComboBox Name="TranslationDirectionComboBox"   
-                      HorizontalAlignment="Left"
-                            Foreground="White"
-                            Background="#333333"
-                            SelectedIndex="0">
-                    
+                <ComboBox Name="TranslationDirectionComboBox"  
+                          Grid.Column="0"
+                          HorizontalAlignment="Left"
+                          Foreground="White"
+                          Background="#333333"
+                          SelectedIndex="0">
+
                     <ComboBoxItem Content="英语 &gt; 中文" Foreground="White" Background="#333333" DataContext="en-US>zh-CN"/>
                     <ComboBoxItem Content="中文 &gt; 英语" Foreground="White" Background="#333333" DataContext="zh-CN>en-US" />
                     <ComboBoxItem Content="中文 &gt; 中文" Foreground="White" Background="#333333" DataContext="zh-CN>zh-CN"/>
                     <ComboBoxItem Content="英语 &gt; 英语" Foreground="White" Background="#333333" DataContext="en-US>en-US"/>
                 </ComboBox>
 
-
-
-                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
 
                     <!--开始录音按钮--><!--Click="StartRecording"  x:Name="btnStart"--> 
                     <Button Content="▶" FontSize="12" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"
@@ -78,8 +76,17 @@
                     <Button Content="✕" FontSize="16" FontWeight="ExtraBold" Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
                             Click="CloseButton_Click"/>
                 </StackPanel>
-            </Grid>
-        </StackPanel>
+
+
+            <Border Grid.ColumnSpan="2"
+                    VerticalAlignment="Top"
+                    Background="Transparent"
+                    PointerPressed="DragBorder_PointerPressed"
+                    PointerReleased="DragBorder_PointerReleased"
+                    PointerMoved="DragBorder_PointerMoved"
+                    PointerExited="DragBorder_PointerReleased"/>
+
+        </Grid>
 
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -93,10 +100,10 @@
             </StackPanel>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="2" Background="#333333">
+        
+<StackPanel Grid.Row="2" Background="#333333">
             <TextBlock x:Name="StatusTextBlock" Foreground="White" Margin="10,0"/>
         </StackPanel>
-
     </Grid>
 
 </Window>

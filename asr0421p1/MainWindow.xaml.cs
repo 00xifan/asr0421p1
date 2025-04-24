@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using WinUIEx;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -33,7 +34,7 @@ namespace asr0421p1
         {
             myButton.Content = "ASRWindow弹出";
             var asrWindow = new ASRWindow();
-            asrWindow.Activate();
+            asrWindow.Show();
         }
     }
 }

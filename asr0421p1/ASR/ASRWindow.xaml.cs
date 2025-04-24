@@ -1,32 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+﻿using asr0421p1.Services;
+using Azure;
+using Azure.AI.Translation.Text;
+using Microsoft.CognitiveServices.Speech;
+using Microsoft.CognitiveServices.Speech.Audio;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using asr0421p1.Services;
-using WinUIEx;
-using Microsoft.UI.Windowing;
-using Microsoft.UI;
-using WinRT.Interop;
-using Windows.Media.SpeechRecognition;
-using Microsoft.CognitiveServices.Speech;
-using Microsoft.CognitiveServices.Speech.Audio;
-using SpeechRecognizer = Microsoft.CognitiveServices.Speech.SpeechRecognizer;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Microsoft.UI.Xaml.Documents;
-using Azure.AI.Translation.Text;
-using Azure;
+using Windows.Graphics;
 using Windows.UI;
 using Windows.UI.Text;
+using Windows.UI.WindowManagement;
+using WinRT.Interop;
+using AppWindow = Microsoft.UI.Windowing.AppWindow;
+using SpeechRecognizer = Microsoft.CognitiveServices.Speech.SpeechRecognizer;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -39,7 +35,9 @@ namespace asr0421p1.ASR
     public sealed partial class ASRWindow : Window
     {
         private ASRWindowVm _asrWindowVm;
-        private AppWindow appWindow;
+        private AppWindow _appWindow; 
+        private bool _isDragging = false;
+
         private readonly ASRService _asrService = new();
         private AudioRecorder _recorder;
 
@@ -57,7 +55,7 @@ namespace asr0421p1.ASR
         // 翻译
         private const string translatorKey = "Dx7cnF12NpSHrf0eLYYRHcbhNEvPWTJPRLe8Ft0fZ6dF7fRHonX3JQQJ99BDACYeBjFXJ3w3AAAbACOGfMGj";
         private const string translatorEndpoint = "https://yanboasr.cognitiveservices.azure.com/";
-        private const string translatorRegion = "eastus"; // 你的服务区域
+        private const string translatorRegion = "eastus"; 
         
         private TextTranslationClient _textTranslationClient;
         private string _currentSourceLanguage = "zh-CN";
@@ -67,34 +65,113 @@ namespace asr0421p1.ASR
         public ASRWindow()
         {
             this.InitializeComponent();
-            _asrWindowVm = new ASRWindowVm();
+            // _asrWindowVm = new ASRWindowVm();
+            // 获取窗口句柄并设置 AppWindow
+            IntPtr hWnd = WindowNative.GetWindowHandle(this);
+            WindowId windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
+            _appWindow = AppWindow.GetFromWindowId(windowId);
+
+            var presenter = _appWindow.Presenter as OverlappedPresenter;
+            if (presenter != null)
+            {
+                // 关键设置：保留窗口边框但隐藏标题栏
+                presenter.SetBorderAndTitleBar(true, false);
+
+                // 禁用所有窗口控制按钮
+                presenter.IsMinimizable = false;
+                presenter.IsMaximizable = false;
+                presenter.IsResizable = true; // 允许手动调整大小
+            }
+
+            // 完全隐藏系统标题栏按钮
+            _appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+            _appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
+            _appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+            _appWindow.TitleBar.ButtonHoverBackgroundColor = Colors.Transparent;
+            _appWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
+            _appWindow.TitleBar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
+
+            // 设置窗口初始大小
+            _appWindow.Resize(new SizeInt32(620, 300));
+
+            // 绑定拖动事件
+            // 绑定拖动事件到 _GridFirst_
+
 
             InitializeSpeechRecognizer();
 
             InitializeTranslationClient();
             TranslationDirectionComboBox.SelectionChanged += TranslationDirectionComboBox_SelectionChanged;
 
-            // 设置窗口大小
-            //this.SetWindowSize(_MainGrid_.Width, _MainGrid_.Height);
 
-            //// 禁用窗口边框
-            //this.ExtendsContentIntoTitleBar = true;
-            //this.SetTitleBar(null);
+        }
+        private void DragBorder_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
+            {
+                _isDragging = true;
+                var hWnd = WindowNative.GetWindowHandle(this);
+                Win32Interop.ReleaseCapture();
+                Win32Interop.SendMessage(hWnd, 0x00A1, (IntPtr)2, IntPtr.Zero);
+            }
+        }
 
-            //// 禁用窗口调整大小
-            //this.SetIsResizable(true);
+        private void DragBorder_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            _isDragging = false;
+        }
 
-            //// 隐藏最小化、最大化和关闭按钮
-            //SetWindowButtonsVisibility(false, false, false);
+        private void DragBorder_PointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (_isDragging && e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
+            {
+                var hWnd = WindowNative.GetWindowHandle(this);
+                Win32Interop.ReleaseCapture();
+                Win32Interop.SendMessage(hWnd, 0x00A1, (IntPtr)2, IntPtr.Zero);
+            }
+        }
+        // 鼠标拖动窗口
+        private void MainGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
+            {
+                // 获取窗口句柄
+                var hWnd = WindowNative.GetWindowHandle(this);
 
-            //InitializeRecorder();
-            //UpdateButtonStates();
+                // 使用 Win32 API 发送 WM_NCLBUTTONDOWN 消息
+                // HTCAPTION = 2（表示窗口标题栏）
+                Win32Interop.SendMessage(hWnd, 0x00A1 /* WM_NCLBUTTONDOWN */, (IntPtr)2 /* HTCAPTION */, IntPtr.Zero);
+            }
+        }
 
+        // 窗口缩放（右下角 Thumb）
+        private void ResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            // 调整窗口大小
+            var newWidth = (int)(_appWindow.Size.Width + e.HorizontalChange);
+            var newHeight = (int)(_appWindow.Size.Height + e.VerticalChange);
+
+            // 限制最小大小
+            newWidth = Math.Max(newWidth, 200);
+            newHeight = Math.Max(newHeight, 100);
+
+            _appWindow.Resize(new SizeInt32(newWidth, newHeight));
         }
         private void InitializeTranslationClient()
         {
             AzureKeyCredential credential = new(translatorKey);
             _textTranslationClient = new TextTranslationClient(credential, translatorRegion);
+        }
+
+        // Win32 互操作辅助类
+        private static class Win32Interop
+        {
+            [DllImport("user32.dll")]
+            public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+            [DllImport("user32.dll", SetLastError = true)]
+            public static extern bool ReleaseCapture();
+            
         }
 
         private void TranslationDirectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
