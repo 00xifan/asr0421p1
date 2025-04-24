@@ -10,42 +10,31 @@
     x:Name="_AsrWindow_" 
     Title="ASRWindow">
     <Grid Background="#222222" x:Name="_MainGrid_">
-        <Grid.Resources>
-            <!--自定义字体样式-->
-            <Style x:Key="TextFontStyle" TargetType="TextBlock">
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="FontSize" Value="18"/>
-            </Style>
-
-            <Style x:Name="OutPutText"  TargetType="TextBlock">
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="FontSize" Value="18"/>
-            </Style>
-        </Grid.Resources>
-
-  
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!--翻译方向选择区域-->
-        <Grid  Margin="10" x:Name="_GridFirst_"
-                    VerticalAlignment="Center">
-        
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="180"/>
-                    <ColumnDefinition Width="Auto" MinWidth="200"/>
-                </Grid.ColumnDefinitions>
 
+            <Grid  x:Name="TitleBar"
+                   Background="Transparent"
+                   Margin="10"
+                   PointerPressed="DragArea_PointerPressed"
+                   PointerReleased="DragArea_PointerReleased"
+                   PointerMoved="DragArea_PointerMoved">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
                 <ComboBox Name="TranslationDirectionComboBox"  
                           Grid.Column="0"
                           HorizontalAlignment="Left"
                           Foreground="White"
                           Background="#333333"
+                          FontSize="14"
                           SelectedIndex="0">
 
                     <ComboBoxItem Content="英语 &gt; 中文" Foreground="White" Background="#333333" DataContext="en-US>zh-CN"/>
@@ -54,39 +43,32 @@
                     <ComboBoxItem Content="英语 &gt; 英语" Foreground="White" Background="#333333" DataContext="en-US>en-US"/>
                 </ComboBox>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
 
-                    <!--开始录音按钮--><!--Click="StartRecording"  x:Name="btnStart"--> 
-                    <Button Content="▶" FontSize="12" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"
+                    <!--开始录音按钮-->
+                    <!--Click="StartRecording"  x:Name="btnStart"-->
+                    <Button Content="▶" FontSize="14" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"
                             Visibility="Visible"
                             x:Name="StartButton" Click="StartButton_Click"/>
 
 
-                    <!--停止录音按钮--> <!--x:Name="btnStop" Click="StopRecording"--> 
+                    <!--停止录音按钮-->
+                    <!--x:Name="btnStop" Click="StopRecording"-->
                     <Button Content="l l" FontWeight="ExtraBlack" Width="35" Height="35" BorderThickness="0" VerticalAlignment="Center"
-                            Visibility="Collapsed"
+                            Visibility="Collapsed" FontSize="14"
                             x:Name="StopButton" Click="StopButton_Click"/>
-
 
                     <!--Smart按钮-->
                     <Button Content="s" FontSize="14" Width="35" Height="35" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"/>
-
 
                     <!--关闭按钮-->
                     <Button Content="✕" FontSize="16" FontWeight="ExtraBold" Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
                             Click="CloseButton_Click"/>
                 </StackPanel>
 
+            </Grid>
 
-            <Border Grid.ColumnSpan="2"
-                    VerticalAlignment="Top"
-                    Background="Transparent"
-                    PointerPressed="DragBorder_PointerPressed"
-                    PointerReleased="DragBorder_PointerReleased"
-                    PointerMoved="DragBorder_PointerMoved"
-                    PointerExited="DragBorder_PointerReleased"/>
-
-        </Grid>
+    
 
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -100,10 +82,10 @@
             </StackPanel>
         </ScrollViewer>
 
-        
-<StackPanel Grid.Row="2" Background="#333333">
+
+        <!--<StackPanel Grid.Row="2" Background="#333333">
             <TextBlock x:Name="StatusTextBlock" Foreground="White" Margin="10,0"/>
-        </StackPanel>
+        </StackPanel>-->
     </Grid>
 
 </Window>

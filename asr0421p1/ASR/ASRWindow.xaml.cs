@@ -16,13 +16,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.Graphics;
 using Windows.UI;
 using Windows.UI.Text;
-using Windows.UI.WindowManagement;
 using WinRT.Interop;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 using SpeechRecognizer = Microsoft.CognitiveServices.Speech.SpeechRecognizer;
+using Window = Microsoft.UI.Xaml.Window;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -35,8 +36,9 @@ namespace asr0421p1.ASR
     public sealed partial class ASRWindow : Window
     {
         private ASRWindowVm _asrWindowVm;
-        private AppWindow _appWindow; 
         private bool _isDragging = false;
+
+
 
         private readonly ASRService _asrService = new();
         private AudioRecorder _recorder;
@@ -55,8 +57,8 @@ namespace asr0421p1.ASR
         // 翻译
         private const string translatorKey = "Dx7cnF12NpSHrf0eLYYRHcbhNEvPWTJPRLe8Ft0fZ6dF7fRHonX3JQQJ99BDACYeBjFXJ3w3AAAbACOGfMGj";
         private const string translatorEndpoint = "https://yanboasr.cognitiveservices.azure.com/";
-        private const string translatorRegion = "eastus"; 
-        
+        private const string translatorRegion = "eastus";
+
         private TextTranslationClient _textTranslationClient;
         private string _currentSourceLanguage = "zh-CN";
         private string _currentTargetLanguage = "en-US";
@@ -66,36 +68,17 @@ namespace asr0421p1.ASR
         {
             this.InitializeComponent();
             // _asrWindowVm = new ASRWindowVm();
-            // 获取窗口句柄并设置 AppWindow
-            IntPtr hWnd = WindowNative.GetWindowHandle(this);
-            WindowId windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
-            _appWindow = AppWindow.GetFromWindowId(windowId);
 
-            var presenter = _appWindow.Presenter as OverlappedPresenter;
-            if (presenter != null)
-            {
-                // 关键设置：保留窗口边框但隐藏标题栏
-                presenter.SetBorderAndTitleBar(true, false);
+            this.AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+            this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Collapsed;
 
-                // 禁用所有窗口控制按钮
-                presenter.IsMinimizable = false;
-                presenter.IsMaximizable = false;
-                presenter.IsResizable = true; // 允许手动调整大小
-            }
-
-            // 完全隐藏系统标题栏按钮
-            _appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
-            _appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
-            _appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-            _appWindow.TitleBar.ButtonHoverBackgroundColor = Colors.Transparent;
-            _appWindow.TitleBar.ButtonPressedBackgroundColor = Colors.Transparent;
-            _appWindow.TitleBar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
 
             // 设置窗口初始大小
-            _appWindow.Resize(new SizeInt32(620, 300));
+            this.AppWindow.Resize(new SizeInt32(820, 340));
 
             // 绑定拖动事件
             // 绑定拖动事件到 _GridFirst_
+            //_GridFirst_.PointerPressed += GridFirst_PointerPressed;
 
 
             InitializeSpeechRecognizer();
@@ -105,57 +88,31 @@ namespace asr0421p1.ASR
 
 
         }
-        private void DragBorder_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
-            {
-                _isDragging = true;
-                var hWnd = WindowNative.GetWindowHandle(this);
-                Win32Interop.ReleaseCapture();
-                Win32Interop.SendMessage(hWnd, 0x00A1, (IntPtr)2, IntPtr.Zero);
-            }
-        }
+        //private void GridFirst_PointerPressed(object sender, PointerRoutedEventArgs e)
+        //{
+        //    if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
+        //    {
+        //        // 获取窗口句柄
+        //        var hWnd = WindowNative.GetWindowHandle(this);
 
-        private void DragBorder_PointerReleased(object sender, PointerRoutedEventArgs e)
-        {
-            _isDragging = false;
-        }
+        //        // 发送 WM_NCLBUTTONDOWN 消息（HTCAPTION = 2）
+        //        Win32Interop.SendMessage(hWnd, 0x00A1 /* WM_NCLBUTTONDOWN */, (IntPtr)2 /* HTCAPTION */, IntPtr.Zero);
+        //    }
+        //}
 
-        private void DragBorder_PointerMoved(object sender, PointerRoutedEventArgs e)
-        {
-            if (_isDragging && e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
-            {
-                var hWnd = WindowNative.GetWindowHandle(this);
-                Win32Interop.ReleaseCapture();
-                Win32Interop.SendMessage(hWnd, 0x00A1, (IntPtr)2, IntPtr.Zero);
-            }
-        }
-        // 鼠标拖动窗口
-        private void MainGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
-            {
-                // 获取窗口句柄
-                var hWnd = WindowNative.GetWindowHandle(this);
-
-                // 使用 Win32 API 发送 WM_NCLBUTTONDOWN 消息
-                // HTCAPTION = 2（表示窗口标题栏）
-                Win32Interop.SendMessage(hWnd, 0x00A1 /* WM_NCLBUTTONDOWN */, (IntPtr)2 /* HTCAPTION */, IntPtr.Zero);
-            }
-        }
 
         // 窗口缩放（右下角 Thumb）
         private void ResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             // 调整窗口大小
-            var newWidth = (int)(_appWindow.Size.Width + e.HorizontalChange);
-            var newHeight = (int)(_appWindow.Size.Height + e.VerticalChange);
+            var newWidth = (int)(this.AppWindow.Size.Width + e.HorizontalChange);
+            var newHeight = (int)(this.AppWindow.Size.Height + e.VerticalChange);
 
             // 限制最小大小
             newWidth = Math.Max(newWidth, 200);
             newHeight = Math.Max(newHeight, 100);
 
-            _appWindow.Resize(new SizeInt32(newWidth, newHeight));
+            this.AppWindow.Resize(new SizeInt32(newWidth, newHeight));
         }
         private void InitializeTranslationClient()
         {
@@ -171,7 +128,7 @@ namespace asr0421p1.ASR
 
             [DllImport("user32.dll", SetLastError = true)]
             public static extern bool ReleaseCapture();
-            
+
         }
 
         private void TranslationDirectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -208,21 +165,21 @@ namespace asr0421p1.ASR
             recognizer = new SpeechRecognizer(speechConfig, audioConfig);
 
             // 订阅识别事件
-            recognizer.SessionStarted += (s, e) =>
-            {
-                DispatcherQueue.TryEnqueue(() => StatusTextBlock.Text = "正在识别...");
-            };
+            //recognizer.SessionStarted += (s, e) =>
+            //{
+            //    DispatcherQueue.TryEnqueue(() => StatusTextBlock.Text = "正在识别...");
+            //};
 
-            recognizer.Recognizing += (s, e) =>
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (StatusTextBlock.Text == "识别成功")
-                    {
-                        StatusTextBlock.Text = "正在识别...";
-                    }
-                });
-            };
+            //recognizer.Recognizing += (s, e) =>
+            //{
+            //    DispatcherQueue.TryEnqueue(() =>
+            //    {
+            //        if (StatusTextBlock.Text == "识别成功")
+            //        {
+            //            StatusTextBlock.Text = "正在识别...";
+            //        }
+            //    });
+            //};
 
             recognizer.Recognized += (s, e) =>
             {
@@ -231,7 +188,7 @@ namespace asr0421p1.ASR
                     DispatcherQueue.TryEnqueue(async () =>
                     {
                         await ProcessRecognitionResult(e.Result.Text);
-                        StatusTextBlock.Text = "识别成功";
+                        //StatusTextBlock.Text = "识别成功";
                     });
                 }
             };
@@ -250,7 +207,7 @@ namespace asr0421p1.ASR
             }
 
             // 添加原始识别结果
-            AddResultText($"[{DateTime.Now:HH:mm:ss}] {text}", Colors.White);
+            AddResultText($"[音] {text}", Colors.White);
 
             // 如果需要翻译
             if (_translationEnabled && !string.IsNullOrWhiteSpace(text))
@@ -260,7 +217,7 @@ namespace asr0421p1.ASR
                     var translationResult = await TranslateText(text);
                     if (!string.IsNullOrEmpty(translationResult))
                     {
-                        AddResultText($"[{DateTime.Now:HH:mm:ss}] [翻译] {translationResult}", Colors.LightGray, true);
+                        AddResultText($"[译] {translationResult}", Colors.White);
                     }
                 }
                 catch (Exception ex)
@@ -272,7 +229,7 @@ namespace asr0421p1.ASR
             _recognitionResults.Add(text);
             ScrollToBottom();
         }
-        private void AddResultText(string text, Color color, bool isItalic = false)
+        private void AddResultText(string text, Color color)
         {
             var textBlock = new TextBlock
             {
@@ -280,7 +237,10 @@ namespace asr0421p1.ASR
                 Foreground = new SolidColorBrush(color),
                 Margin = new Thickness(0, 0, 0, 5),
                 TextWrapping = TextWrapping.Wrap,
-                FontStyle = isItalic ? FontStyle.Italic : FontStyle.Normal
+                FontStyle = FontStyle.Normal,
+                FontSize = 16,
+                HorizontalAlignment = HorizontalAlignment.Center
+
             };
             ResultsPanel.Children.Add(textBlock);
         }
@@ -304,7 +264,7 @@ namespace asr0421p1.ASR
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"翻译错误: {ex.Message}");
+                AddResultText($"[{DateTime.Now:HH:mm:ss}] 翻译错误: {ex.Message}", Colors.OrangeRed);
                 throw;
             }
 
@@ -318,7 +278,6 @@ namespace asr0421p1.ASR
         }
 
 
-
         private async void StartButton_Click(object sender, RoutedEventArgs e)
         {
             if (!isRecognizing)
@@ -326,7 +285,7 @@ namespace asr0421p1.ASR
                 try
                 {
                     ResultsPanel.Children.Clear();
-                    StatusTextBlock.Text = "开始识别";
+                   // StatusTextBlock.Text = "开始识别";
 
                     await recognizer.StartContinuousRecognitionAsync();
                     isRecognizing = true;
@@ -335,7 +294,8 @@ namespace asr0421p1.ASR
                 }
                 catch (Exception ex)
                 {
-                    StatusTextBlock.Text = $"识别失败: {ex.Message}";
+                    //StatusTextBlock.Text = $"识别失败: {ex.Message}";
+                    AddResultText($"[{DateTime.Now:HH:mm:ss}] 识别失败: {ex.Message}", Colors.OrangeRed);
                 }
             }
         }
@@ -356,11 +316,12 @@ namespace asr0421p1.ASR
                 isRecognizing = false;
                 StartButton.Visibility = Visibility.Visible;
                 StopButton.Visibility = Visibility.Collapsed;
-                StatusTextBlock.Text = "识别结束"; // 停止识别状态
+                //StatusTextBlock.Text = "识别结束"; // 停止识别状态
             }
             catch (Exception ex)
             {
-                StatusTextBlock.Text = $"停止失败: {ex.Message}";
+                //StatusTextBlock.Text = $"停止失败: {ex.Message}";
+                AddResultText($"[{DateTime.Now:HH:mm:ss}] 停止失败: {ex.Message}", Colors.OrangeRed);
             }
         }
 
@@ -373,7 +334,92 @@ namespace asr0421p1.ASR
             recognizer?.Dispose();
             this.Close();
         }
+        #region DargWindow
+        private OverlappedPresenter GetPresenter()
+        {
+            return AppWindow.Presenter as OverlappedPresenter;
+        }
 
+        private PointInt32 _dragStartPoint;
+        private double _dpiScale = 2;
+        private double _lastNormalWindowWidth = 0;
+        private Point _initialScreenPosition;
+        private double _targetRatio;
+        private bool _isMaximizedBeforeDrag;
+
+        public void DragArea_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            var presenter = GetPresenter();
+            if (presenter == null) return;
+
+            TitleBar.CapturePointer(e.Pointer);
+            var point = e.GetCurrentPoint(TitleBar);
+
+            _isDragging = true;
+            _isMaximizedBeforeDrag = (presenter.State == OverlappedPresenterState.Maximized);
+
+            if (_isMaximizedBeforeDrag)
+            {
+                var screenPoint = e.GetCurrentPoint(null);
+                _initialScreenPosition = new Point(screenPoint.Position.X, screenPoint.Position.Y);
+                _targetRatio = point.Position.X / TitleBar.ActualWidth;
+            }
+
+            _dragStartPoint = new PointInt32((int)point.Position.X, (int)point.Position.Y);
+        }
+
+        public void DragArea_PointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (!_isDragging) return;
+
+            var presenter = GetPresenter();
+            if (presenter == null) return;
+
+            var currentScreenPoint = e.GetCurrentPoint(null);
+            var currentPosition = new Point(currentScreenPoint.Position.X, currentScreenPoint.Position.Y);
+
+            if (_isMaximizedBeforeDrag)
+            {
+                var delta = new Point(
+                    (currentPosition.X - _initialScreenPosition.X) * _dpiScale,
+                    (currentPosition.Y - _initialScreenPosition.Y) * _dpiScale
+                );
+
+                if (Math.Abs(delta.X) < 5 && Math.Abs(delta.Y) < 5) return;
+
+                presenter.Restore();
+
+                var screenX = _initialScreenPosition.X * _dpiScale;
+                var screenY = _initialScreenPosition.Y * _dpiScale;
+                var windowWidth = _lastNormalWindowWidth > 0 ? _lastNormalWindowWidth : AppWindow.Size.Width;
+
+                AppWindow.Move(new PointInt32(
+                    (int)(screenX - windowWidth * _targetRatio),
+                    (int)(screenY - _dragStartPoint.Y)
+                ));
+
+                var newLocalPoint = e.GetCurrentPoint(TitleBar).Position;
+                _dragStartPoint = new PointInt32((int)newLocalPoint.X, (int)newLocalPoint.Y);
+                _isMaximizedBeforeDrag = false;
+            }
+
+            var localPoint = e.GetCurrentPoint(TitleBar);
+            var offsetX = localPoint.Position.X - _dragStartPoint.X;
+            var offsetY = localPoint.Position.Y - _dragStartPoint.Y;
+
+            AppWindow.Move(new PointInt32(
+                AppWindow.Position.X + (int)offsetX,
+                AppWindow.Position.Y + (int)offsetY
+            ));
+        }
+
+        public void DragArea_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            _isDragging = false;
+            _isMaximizedBeforeDrag = false;
+            TitleBar.ReleasePointerCapture(e.Pointer);
+        }
+        #endregion
 
     }
 }
