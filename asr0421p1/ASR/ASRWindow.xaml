@@ -15,7 +15,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!--翻译方向选择区域-->
+        <!--翻译方向选择区域--> 
 
             <Grid  x:Name="TitleBar"
                    Background="Transparent"
@@ -54,15 +54,18 @@
 
                     <!--停止录音按钮-->
                     <!--x:Name="btnStop" Click="StopRecording"-->
-                    <Button Content="l l" FontWeight="ExtraBlack" Width="35" Height="35" BorderThickness="0" VerticalAlignment="Center"
+                <Button Content="l l" FontWeight="ExtraBlack" Width="35" Height="35" Padding="0"  BorderThickness="0" VerticalAlignment="Center"
                             Visibility="Collapsed" FontSize="14"
                             x:Name="StopButton" Click="StopButton_Click"/>
 
                     <!--Smart按钮-->
-                    <Button Content="s" FontSize="14" Width="35" Height="35" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"/>
+                <Button FontSize="14" Width="35" Height="35" Padding="0" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center">
+                    <!--<Image Source="/Assets/SmartNote.png" Stretch="Uniform"/>-->
+                    <Image Source="ms-appx:///Assets/SmartNote.svg" Width="19" Height="19"/>
+                </Button>
 
-                    <!--关闭按钮-->
-                    <Button Content="✕" FontSize="16" FontWeight="ExtraBold" Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
+                <!--关闭按钮-->
+                <Button Content="✕" FontSize="16" FontWeight="ExtraBold" Padding="0"  Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
                             Click="CloseButton_Click"/>
                 </StackPanel>
 

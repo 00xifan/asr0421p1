@@ -11,9 +11,12 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Foundation;
@@ -68,10 +71,10 @@ namespace asr0421p1.ASR
         {
             this.InitializeComponent();
             // _asrWindowVm = new ASRWindowVm();
-
+            
             this.AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Collapsed;
-
+            
 
             // 设置窗口初始大小
             this.AppWindow.Resize(new SizeInt32(820, 340));
@@ -88,6 +91,7 @@ namespace asr0421p1.ASR
 
 
         }
+
         //private void GridFirst_PointerPressed(object sender, PointerRoutedEventArgs e)
         //{
         //    if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
@@ -207,7 +211,7 @@ namespace asr0421p1.ASR
             }
 
             // 添加原始识别结果
-            AddResultText($"[音] {text}", Colors.White);
+            AddResultText($"音:{text}", Colors.White);
 
             // 如果需要翻译
             if (_translationEnabled && !string.IsNullOrWhiteSpace(text))
@@ -217,7 +221,7 @@ namespace asr0421p1.ASR
                     var translationResult = await TranslateText(text);
                     if (!string.IsNullOrEmpty(translationResult))
                     {
-                        AddResultText($"[译] {translationResult}", Colors.White);
+                        AddResultText($"译:{translationResult}", Colors.White);
                     }
                 }
                 catch (Exception ex)
@@ -237,7 +241,6 @@ namespace asr0421p1.ASR
                 Foreground = new SolidColorBrush(color),
                 Margin = new Thickness(0, 0, 0, 5),
                 TextWrapping = TextWrapping.Wrap,
-                FontStyle = FontStyle.Normal,
                 FontSize = 16,
                 HorizontalAlignment = HorizontalAlignment.Center
 
@@ -334,6 +337,7 @@ namespace asr0421p1.ASR
             recognizer?.Dispose();
             this.Close();
         }
+
         #region DargWindow
         private OverlappedPresenter GetPresenter()
         {
