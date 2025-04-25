@@ -74,48 +74,15 @@ namespace asr0421p1.ASR
             // 绑定拖动事件到 _GridFirst_
             //_GridFirst_.PointerPressed += GridFirst_PointerPressed;
 
+            UpdateLanguageSettingsFromComboBox();
 
             InitializeSpeechRecognizer();
-
             InitializeTranslationClient();
+
             TranslationDirectionComboBox.SelectionChanged += TranslationDirectionComboBox_SelectionChanged;
 
-
         }
-
-        //private void GridFirst_PointerPressed(object sender, PointerRoutedEventArgs e)
-        //{
-        //    if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
-        //    {
-        //        // 获取窗口句柄
-        //        var hWnd = WindowNative.GetWindowHandle(this);
-
-        //        // 发送 WM_NCLBUTTONDOWN 消息（HTCAPTION = 2）
-        //        Win32Interop.SendMessage(hWnd, 0x00A1 /* WM_NCLBUTTONDOWN */, (IntPtr)2 /* HTCAPTION */, IntPtr.Zero);
-        //    }
-        //}
-
-
-        // 窗口缩放（右下角 Thumb）
-        private void ResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
-        {
-            // 调整窗口大小
-            var newWidth = (int)(this.AppWindow.Size.Width + e.HorizontalChange);
-            var newHeight = (int)(this.AppWindow.Size.Height + e.VerticalChange);
-
-            // 限制最小大小
-            newWidth = Math.Max(newWidth, 200);
-            newHeight = Math.Max(newHeight, 100);
-
-            this.AppWindow.Resize(new SizeInt32(newWidth, newHeight));
-        }
-        private void InitializeTranslationClient()
-        {
-            AzureKeyCredential credential = new(translatorKey);
-            _textTranslationClient = new TextTranslationClient(credential, translatorRegion);
-        }
-
-        private void TranslationDirectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void UpdateLanguageSettingsFromComboBox()
         {
             if (TranslationDirectionComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
@@ -128,15 +95,25 @@ namespace asr0421p1.ASR
                         _currentSourceLanguage = languages[0];
                         _currentTargetLanguage = languages[1];
                         _translationEnabled = _currentSourceLanguage != _currentTargetLanguage;
-
-                        // 更新语音识别语言
-                        if (recognizer != null)
-                        {
-                            recognizer.Dispose();
-                            InitializeSpeechRecognizer();
-                        }
                     }
                 }
+            }
+        }
+        private void InitializeTranslationClient()
+        {
+            AzureKeyCredential credential = new(translatorKey);
+            _textTranslationClient = new TextTranslationClient(credential, translatorRegion);
+        }
+
+        private void TranslationDirectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateLanguageSettingsFromComboBox();
+
+            // 更新语音识别语言
+            if (recognizer != null)
+            {
+                recognizer.Dispose();
+                InitializeSpeechRecognizer();
             }
         }
 
@@ -191,7 +168,7 @@ namespace asr0421p1.ASR
             }
 
             // 添加原始识别结果
-            AddResultText($"音:{text}", Colors.White);
+            AddResultText(text, Colors.White, 6,24);
 
             // 如果需要翻译
             if (_translationEnabled && !string.IsNullOrWhiteSpace(text))
@@ -201,7 +178,7 @@ namespace asr0421p1.ASR
                     var translationResult = await TranslateText(text);
                     if (!string.IsNullOrEmpty(translationResult))
                     {
-                        AddResultText($"译:{translationResult}", Colors.White);
+                        AddResultText(translationResult, Color.FromArgb(255, 56, 164, 255), 30,24);
                     }
                 }
                 catch (Exception ex)
@@ -213,18 +190,29 @@ namespace asr0421p1.ASR
             _recognitionResults.Add(text);
             ScrollToBottom();
         }
-        private void AddResultText(string text, Color color)
+        private void AddResultText(string text, Color color, double marginBottom = 6, double fontSize = 16)
         {
+            // 根据当前源语言选择字体
+            string fontFamily = _currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI";
+
+            // 如果是翻译结果（蓝色文本），使用目标语言选择字体
+            if (color == Colors.Blue)
+            {
+                fontFamily = _currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI";
+            }
+
             var textBlock = new TextBlock
             {
                 Text = text,
                 Foreground = new SolidColorBrush(color),
-                Margin = new Thickness(0, 0, 0, 5),
+                Margin = new Thickness(0, 0, 0, marginBottom),
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 16,
-                HorizontalAlignment = HorizontalAlignment.Center
-
+                FontSize = fontSize,
+                FontFamily = new FontFamily(fontFamily),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                LineHeight = fontSize * 1.5 // 设置行高为字体大小的1.5倍
             };
+
             ResultsPanel.Children.Add(textBlock);
         }
 
@@ -267,8 +255,16 @@ namespace asr0421p1.ASR
             {
                 try
                 {
+                    UpdateLanguageSettingsFromComboBox();
+                    
+                    if (recognizer != null)
+                    {
+                        recognizer.Dispose();
+                        InitializeSpeechRecognizer();
+                    }
+                    
                     ResultsPanel.Children.Clear();
-                   // StatusTextBlock.Text = "开始识别";
+                    // StatusTextBlock.Text = "开始识别";
 
                     await recognizer.StartContinuousRecognitionAsync();
                     isRecognizing = true;
@@ -403,6 +399,37 @@ namespace asr0421p1.ASR
             _isMaximizedBeforeDrag = false;
             TitleBar.ReleasePointerCapture(e.Pointer);
         }
+        #endregion
+
+        #region 窗口缩放（右下角 Thumb）
+
+        //private void GridFirst_PointerPressed(object sender, PointerRoutedEventArgs e)
+        //{
+        //    if (e.GetCurrentPoint(null).Properties.IsLeftButtonPressed)
+        //    {
+        //        // 获取窗口句柄
+        //        var hWnd = WindowNative.GetWindowHandle(this);
+
+        //        // 发送 WM_NCLBUTTONDOWN 消息（HTCAPTION = 2）
+        //        Win32Interop.SendMessage(hWnd, 0x00A1 /* WM_NCLBUTTONDOWN */, (IntPtr)2 /* HTCAPTION */, IntPtr.Zero);
+        //    }
+        //}
+
+
+        // 窗口缩放（右下角 Thumb）
+        private void ResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            // 调整窗口大小
+            var newWidth = (int)(this.AppWindow.Size.Width + e.HorizontalChange);
+            var newHeight = (int)(this.AppWindow.Size.Height + e.VerticalChange);
+
+            // 限制最小大小
+            newWidth = Math.Max(newWidth, 200);
+            newHeight = Math.Max(newHeight, 100);
+
+            this.AppWindow.Resize(new SizeInt32(newWidth, newHeight));
+        }
+
         #endregion
 
     }
