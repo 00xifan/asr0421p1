@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>asr0421p1</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -63,6 +63,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Internal\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\UniversalLib\UniversalLib.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="Assets\SmartNote.png">
