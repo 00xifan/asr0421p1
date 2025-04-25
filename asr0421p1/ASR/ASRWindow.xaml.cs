@@ -41,17 +41,9 @@ namespace asr0421p1.ASR
         private ASRWindowVm _asrWindowVm;
         private bool _isDragging = false;
 
-
-
-        private readonly ASRService _asrService = new();
-        private AudioRecorder _recorder;
-
-        private bool _isRecording = false;
-
-        private Microsoft.CognitiveServices.Speech.SpeechRecognizer recognizer;
+        private SpeechRecognizer recognizer;
         private bool isRecognizing = false;
         private readonly List<string> _recognitionResults = new();
-        private int _currentResultIndex = 0;
 
         //  Azure 语音服务密钥和区域
         private const string speechKey = "9bip1SRtixiGbvLlIrD77AHlG02Z2NBCnUkpLvmF4OankckyqGt1JQQJ99BDACYeBjFXJ3w3AAAYACOGGLSi";
@@ -70,7 +62,6 @@ namespace asr0421p1.ASR
         public ASRWindow()
         {
             this.InitializeComponent();
-            // _asrWindowVm = new ASRWindowVm();
             
             this.AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Collapsed;
@@ -122,17 +113,6 @@ namespace asr0421p1.ASR
         {
             AzureKeyCredential credential = new(translatorKey);
             _textTranslationClient = new TextTranslationClient(credential, translatorRegion);
-        }
-
-        // Win32 互操作辅助类
-        private static class Win32Interop
-        {
-            [DllImport("user32.dll")]
-            public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-
-            [DllImport("user32.dll", SetLastError = true)]
-            public static extern bool ReleaseCapture();
-
         }
 
         private void TranslationDirectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

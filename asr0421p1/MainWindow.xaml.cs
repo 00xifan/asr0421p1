@@ -34,7 +34,7 @@ namespace asr0421p1
         {
             myButton.Content = "ASRWindow弹出";
             var asrWindow = new ASRWindow();
-            asrWindow.Show();
+            asrWindow.Activate();
         }
     }
 }
