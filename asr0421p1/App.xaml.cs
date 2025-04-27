@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
+using UniversalLib.Common;
 using UniversalLib.Core.Monitors;
 using UniversalLib.Core.Sensors;
 using UniversalLib.Services;
@@ -22,6 +23,7 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Graphics.Display.Core;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -33,7 +35,7 @@ namespace asr0421p1
     /// </summary>
     public partial class App : Application
     {
-        private IServiceProvider _serviceProvider; 
+        private IServiceProvider _serviceProvider;
         private IMonitorStatusManagerServices _monitorStatusManagerServices;
         private ISensorStatusManagerServices _sensorStatusManagerServices;
 
@@ -45,6 +47,7 @@ namespace asr0421p1
         {
             this.InitializeComponent();
             InitUnityService();
+
         }
 
         private void InitUnityService()
@@ -59,50 +62,10 @@ namespace asr0421p1
 
             _monitorStatusManagerServices = GetService<IMonitorStatusManagerServices>();
             _monitorStatusManagerServices.Init();
-
-            _sensorStatusManagerServices.FormChangedAction += Sensor_FromChangedActioned;
-        }
-
-        private void Sensor_FromChangedActioned(SENSOR_FORM fORM)
-        {
-            if (fORM == SENSOR_FORM.FF_TENT)
-            {
-                ShowWindowsOnTentMode();
-             
-            }
-            else
-            {
-                ShowSingleWindow();
-            }
-        }
-
-        private void ShowWindowsOnTentMode()
-        {
-            var monitorB = _monitorStatusManagerServices.GetMonitor(ScreenNameEnum.ScreenB);
-            if (monitorB != null)
-            {
-                m_windowB = CreateAndActivateWindow();
-            }
-
-            var monitorC = _monitorStatusManagerServices.GetMonitor(ScreenNameEnum.ScreenC);
-            if (monitorC != null)
-            {
-                m_windowC = CreateAndActivateWindow();
-            }
-        }
-
-        private Window CreateAndActivateWindow()
-        {
-            var window = new ASRWindow();
-            window.Activate();
-            return window;
         }
 
 
-        private void ShowSingleWindow()
-        {
-            m_window = CreateAndActivateWindow();
-        }
+
 
 
         public T GetService<T>() where T : notnull
@@ -115,21 +78,39 @@ namespace asr0421p1
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            SENSOR_FORM currentFormStatus = _sensorStatusManagerServices.GetComputerMode();
-           
-            if (currentFormStatus == SENSOR_FORM.FF_TENT)
+            GlobalConstant.Instance.SystemMachineType();
+
+            //if (GlobalConstant.Instance.CurrentMachineType != GlobalConstant.MachineType.DualDisplayDevice)
+            //{
+            //    m_TentwindowB = new ASRWindow(ScreenNameEnum.SingleScreen);
+            //    m_TentwindowB.Activate();
+            //}
+            //else
+            //{
+            //    m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
+            //    m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
+            //    m_TentwindowB.Activate();
+            //    m_TentwindowC.Activate();
+            //}
+
+            // 总是创建主窗口
+            m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
+            m_TentwindowB.Activate();
+
+            // 双屏模式下创建C屏窗口但默认隐藏
+            if (GlobalConstant.Instance.CurrentMachineType == GlobalConstant.MachineType.DualDisplayDevice)
             {
-                ShowWindowsOnTentMode();
+                m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
+                // 默认隐藏C屏窗口
+                m_TentwindowC.AppWindow.Hide();
             }
-            else
-            {
-                ShowSingleWindow();
-            }
+
         }
 
-        private Window? m_window;
-        private Window? m_windowB;
-        private Window? m_windowC;
+
+        private ASRWindow? m_TentwindowB;  //MAIN
+
+        private ASRWindow? m_TentwindowC;
 
 
     }

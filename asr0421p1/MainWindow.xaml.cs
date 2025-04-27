@@ -32,9 +32,6 @@ namespace asr0421p1
 
         private void myButton_Click(object sender, RoutedEventArgs e)
         {
-            myButton.Content = "ASRWindow弹出";
-            var asrWindow = new ASRWindow();
-            asrWindow.Activate();
         }
     }
 }

@@ -3,6 +3,7 @@ using Azure;
 using Azure.AI.Translation.Text;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
+using Microsoft.Extensions.Azure;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -14,16 +15,21 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using UniversalLib.Core.Monitors;
+using UniversalLib.Core.Sensors;
+using UniversalLib.Services;
 using Windows.Foundation;
 using Windows.Graphics;
 using Windows.UI;
 using Windows.UI.Text;
 using WinRT.Interop;
+using WinUIEx;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 using SpeechRecognizer = Microsoft.CognitiveServices.Speech.SpeechRecognizer;
 using Window = Microsoft.UI.Xaml.Window;
@@ -58,18 +64,20 @@ namespace asr0421p1.ASR
         private string _currentSourceLanguage = "zh-CN";
         private string _currentTargetLanguage = "en-US";
         private bool _translationEnabled = false;
-
-        public ASRWindow()
+        ISensorStatusManagerServices _sensorStatusManagerServices;
+        IMonitorStatusManagerServices _monitorStatusManagerServices;
+        private readonly ScreenNameEnum CurrentScreenType;
+        public ASRWindow(ScreenNameEnum screenName)
         {
+            CurrentScreenType = screenName;
             this.InitializeComponent();
-            
+
             this.AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Collapsed;
-            
+
 
             // 设置窗口初始大小
-            this.AppWindow.Resize(new SizeInt32(820, 340));
-
+            this.AppWindow.Resize(new SizeInt32(1220, 340));
             // 绑定拖动事件
             // 绑定拖动事件到 _GridFirst_
             //_GridFirst_.PointerPressed += GridFirst_PointerPressed;
@@ -80,8 +88,23 @@ namespace asr0421p1.ASR
             InitializeTranslationClient();
 
             TranslationDirectionComboBox.SelectionChanged += TranslationDirectionComboBox_SelectionChanged;
+            _sensorStatusManagerServices = ((App)Application.Current).GetService<ISensorStatusManagerServices>();
+            _sensorStatusManagerServices.FormChangedAction += Sensor_FromChangedActioned;
+            // var status = _sensorStatusManagerServices.CurrentFormStatus;
+            _monitorStatusManagerServices = ((App)Application.Current).GetService<IMonitorStatusManagerServices>();
 
+            // 初始窗口位置
+            var monitor = _monitorStatusManagerServices.GetMonitor(CurrentScreenType);
+            WindowMove(monitor);
+
+            // 如果是C屏且不是Tent模式，则隐藏窗口
+            if (CurrentScreenType == ScreenNameEnum.ScreenC &&
+                _sensorStatusManagerServices.CurrentFormStatus != SENSOR_FORM.FF_TENT)
+            {
+                this.AppWindow.Hide();
+            }
         }
+
         private void UpdateLanguageSettingsFromComboBox()
         {
             if (TranslationDirectionComboBox.SelectedItem is ComboBoxItem selectedItem)
@@ -168,7 +191,7 @@ namespace asr0421p1.ASR
             }
 
             // 添加原始识别结果
-            AddResultText(text, Colors.White, 6,24);
+            AddResultText(text, Colors.White, 6, 24);
 
             // 如果需要翻译
             if (_translationEnabled && !string.IsNullOrWhiteSpace(text))
@@ -178,7 +201,7 @@ namespace asr0421p1.ASR
                     var translationResult = await TranslateText(text);
                     if (!string.IsNullOrEmpty(translationResult))
                     {
-                        AddResultText(translationResult, Color.FromArgb(255, 56, 164, 255), 30,24);
+                        AddResultText(translationResult, Color.FromArgb(255, 56, 164, 255), 30, 24);
                     }
                 }
                 catch (Exception ex)
@@ -256,13 +279,13 @@ namespace asr0421p1.ASR
                 try
                 {
                     UpdateLanguageSettingsFromComboBox();
-                    
+
                     if (recognizer != null)
                     {
                         recognizer.Dispose();
                         InitializeSpeechRecognizer();
                     }
-                    
+
                     ResultsPanel.Children.Clear();
                     // StatusTextBlock.Text = "开始识别";
 
@@ -429,6 +452,56 @@ namespace asr0421p1.ASR
 
             this.AppWindow.Resize(new SizeInt32(newWidth, newHeight));
         }
+
+        #endregion
+
+        #region Tent模式
+        private void Sensor_FromChangedActioned(SENSOR_FORM fORM)
+        {
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                var monitor = _monitorStatusManagerServices.GetMonitor(CurrentScreenType);
+
+                if (fORM == SENSOR_FORM.FF_TENT)
+                {
+                    // Tent模式下显示窗口并定位
+                    this.AppWindow.Show();
+                    WindowMove(monitor);
+                }
+                else if (CurrentScreenType == ScreenNameEnum.ScreenC)
+                {
+                    // 非Tent模式下隐藏C屏窗口
+                    this.AppWindow.Hide();
+                }
+            });
+
+
+        }
+
+        private void WindowMove(Monitor monitor)
+        {
+            // 计算窗口应该放置的顶部位置（显示器底部减去窗口高度和任务栏高度）
+            var targetTop = monitor.WindowRect.Bottom - this.AppWindow.Size.Height - 80;
+
+            // 计算窗口的水平居中位置
+            var targetLeft = monitor.WindowRect.Left + (monitor.WindowRect.Width - this.AppWindow.Size.Width) / 2;
+
+            // 确保窗口不会超出屏幕顶部
+            targetTop = Math.Max(monitor.WindowRect.Top, targetTop);
+
+            // 移动窗口到目标位置
+            this.AppWindow.Move(new PointInt32((int)targetLeft, (int)targetTop));
+
+            // 确保窗口保持置顶
+            if (AppWindow.Presenter is OverlappedPresenter presenter)
+            {
+                presenter.IsAlwaysOnTop = true;
+            }
+
+            // 激活窗口
+            this.Activate();
+        }
+
 
         #endregion
 
