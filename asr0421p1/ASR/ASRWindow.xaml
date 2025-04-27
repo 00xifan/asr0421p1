@@ -71,9 +71,6 @@
 
         </Grid>
 
-
-
-
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="ResultsPanel">
                 <RichTextBlock FontSize="16" LineHeight="30" HorizontalAlignment="Center">
@@ -84,7 +81,6 @@
                 </RichTextBlock>
             </StackPanel>
         </ScrollViewer>
-
 
         <!--<StackPanel Grid.Row="2" Background="#333333">
             <TextBlock x:Name="StatusTextBlock" Foreground="White" Margin="10,0"/>

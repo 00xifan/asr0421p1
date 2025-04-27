@@ -97,12 +97,30 @@ namespace asr0421p1.ASR
             var monitor = _monitorStatusManagerServices.GetMonitor(CurrentScreenType);
             WindowMove(monitor);
 
+            // 根据屏幕类型设置初始选项
+            if (CurrentScreenType == ScreenNameEnum.ScreenC)
+            {
+                // 设置C屏默认选中"中文 > 英语"
+                TranslationDirectionComboBox.SelectedIndex = 1;
+            }
             // 如果是C屏且不是Tent模式，则隐藏窗口
             if (CurrentScreenType == ScreenNameEnum.ScreenC &&
                 _sensorStatusManagerServices.CurrentFormStatus != SENSOR_FORM.FF_TENT)
             {
                 this.AppWindow.Hide();
             }
+
+            this.Activated += OnWindowActivated;
+
+
+        }
+
+        private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
+        {
+            this.Activated -= OnWindowActivated;
+
+            // 模拟点击开始按钮
+            StartButton_Click(null, null);
         }
 
         private void UpdateLanguageSettingsFromComboBox()
@@ -211,7 +229,7 @@ namespace asr0421p1.ASR
             }
 
             _recognitionResults.Add(text);
-            ScrollToBottom();
+            //ScrollToBottom();
         }
         private void AddResultText(string text, Color color, double marginBottom = 6, double fontSize = 16)
         {
@@ -237,6 +255,10 @@ namespace asr0421p1.ASR
             };
 
             ResultsPanel.Children.Add(textBlock);
+
+            // 确保UI更新完成后再滚动
+            ResultsPanel.UpdateLayout();
+            ScrollToBottom();
         }
 
         private async Task<string> TranslateText(string text)
@@ -267,8 +289,19 @@ namespace asr0421p1.ASR
 
         private void ScrollToBottom()
         {
-            var scrollViewer = (ScrollViewer)ResultsPanel.Parent;
-            scrollViewer.ChangeView(null, scrollViewer.ScrollableHeight, null);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                var scrollViewer = ResultsPanel.Parent as ScrollViewer;
+                if (scrollViewer != null)
+                {
+                    // 使用 ChangeView 并等待布局更新完成
+                    scrollViewer.UpdateLayout();
+                    scrollViewer.ChangeView(null, scrollViewer.ScrollableHeight, null, true);
+
+                    // 或者使用这个替代方案
+                    //scrollViewer.ScrollToVerticalOffset(scrollViewer.ScrollableHeight);
+        }
+            });
         }
 
 
@@ -286,8 +319,18 @@ namespace asr0421p1.ASR
                         InitializeSpeechRecognizer();
                     }
 
+                    if (ResultsPanel.Children.Count > 1 ||
+                        (ResultsPanel.Children.Count == 1 &&
+                        !(ResultsPanel.Children[0] is RichTextBlock rtb &&
+                        rtb.Blocks.FirstOrDefault() is Paragraph p &&
+                        p.Inlines.FirstOrDefault() is Run run &&
+                        run.Text == "识别结果将显示在这里...")))
+                    {
                     ResultsPanel.Children.Clear();
-                    // StatusTextBlock.Text = "开始识别";
+                        var richTextBlock = new RichTextBlock { FontSize = 16, LineHeight = 30, HorizontalAlignment = HorizontalAlignment.Center };
+                        richTextBlock.Blocks.Add(new Paragraph { Inlines = { new Run { Text = "识别结果将显示在这里...", Foreground = new SolidColorBrush(Colors.Wheat) } } });
+                        ResultsPanel.Children.Add(richTextBlock);
+                    }
 
                     await recognizer.StartContinuousRecognitionAsync();
                     isRecognizing = true;
