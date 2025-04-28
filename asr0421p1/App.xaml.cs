@@ -38,6 +38,7 @@ namespace asr0421p1
         private IServiceProvider _serviceProvider;
         private IMonitorStatusManagerServices _monitorStatusManagerServices;
         private ISensorStatusManagerServices _sensorStatusManagerServices;
+        private IStylusGestureServices _stylusGestureServices;
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -55,6 +56,8 @@ namespace asr0421p1
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<ISensorStatusManagerServices, SensorStatusManagerServices>();
             serviceCollection.AddSingleton<IMonitorStatusManagerServices, MonitorStatusManagerServices>();
+
+            serviceCollection.AddSingleton<IStylusGestureServices, StylusGestureServices>();
             _serviceProvider = serviceCollection.BuildServiceProvider();
 
             _sensorStatusManagerServices = GetService<ISensorStatusManagerServices>();
@@ -62,11 +65,11 @@ namespace asr0421p1
 
             _monitorStatusManagerServices = GetService<IMonitorStatusManagerServices>();
             _monitorStatusManagerServices.Init();
+            _stylusGestureServices = GetService<IStylusGestureServices>();
+            _stylusGestureServices.Init();
         }
 
-
-
-
+       
 
         public T GetService<T>() where T : notnull
         {
@@ -95,14 +98,15 @@ namespace asr0421p1
 
             // 总是创建主窗口
             m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
-            m_TentwindowB.Activate();
+        
+
 
             // 双屏模式下创建C屏窗口但默认隐藏
             if (GlobalConstant.Instance.CurrentMachineType == GlobalConstant.MachineType.DualDisplayDevice)
             {
+                m_TentwindowB.Activate();
                 m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
                 // 默认隐藏C屏窗口
-                m_TentwindowC.AppWindow.Hide();
             }
 
         }

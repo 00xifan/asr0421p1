@@ -1,9 +1,11 @@
-﻿using asr0421p1.Services;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Azure;
 using Azure.AI.Translation.Text;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
-using Microsoft.Extensions.Azure;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -12,24 +14,13 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using UniversalLib.Common;
 using UniversalLib.Core.Monitors;
 using UniversalLib.Core.Sensors;
 using UniversalLib.Services;
 using Windows.Foundation;
 using Windows.Graphics;
 using Windows.UI;
-using Windows.UI.Text;
-using WinRT.Interop;
-using WinUIEx;
 using AppWindow = Microsoft.UI.Windowing.AppWindow;
 using SpeechRecognizer = Microsoft.CognitiveServices.Speech.SpeechRecognizer;
 using Window = Microsoft.UI.Xaml.Window;
@@ -52,8 +43,12 @@ namespace asr0421p1.ASR
         private readonly List<string> _recognitionResults = new();
 
         //  Azure 语音服务密钥和区域
-        private const string speechKey = "9bip1SRtixiGbvLlIrD77AHlG02Z2NBCnUkpLvmF4OankckyqGt1JQQJ99BDACYeBjFXJ3w3AAAYACOGGLSi";
-        private const string speechRegion = "eastus";
+        //private const string speechKey = "9bip1SRtixiGbvLlIrD77AHlG02Z2NBCnUkpLvmF4OankckyqGt1JQQJ99BDACYeBjFXJ3w3AAAYACOGGLSi";
+        //private const string speechRegion = "eastus";
+
+        private const string speechKey = "89TPNkg1y6WFDpkH2Ee80aJPEyJ9eNlm14S9SjvGaPYDtexlHKh0JQQJ99BDAEHpCsCfT1gyAAAYACOG5uvI";
+        private const string speechRegion = "chinanorth3";
+
 
         // 翻译
         private const string translatorKey = "Dx7cnF12NpSHrf0eLYYRHcbhNEvPWTJPRLe8Ft0fZ6dF7fRHonX3JQQJ99BDACYeBjFXJ3w3AAAbACOGfMGj";
@@ -66,10 +61,13 @@ namespace asr0421p1.ASR
         private bool _translationEnabled = false;
         ISensorStatusManagerServices _sensorStatusManagerServices;
         IMonitorStatusManagerServices _monitorStatusManagerServices;
+        IStylusGestureServices _stylusGestureServices;
         private readonly ScreenNameEnum CurrentScreenType;
         public ASRWindow(ScreenNameEnum screenName)
         {
             CurrentScreenType = screenName;
+            GlobalConstant.Instance.SystemMachineType();
+
             this.InitializeComponent();
 
             this.AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
@@ -77,7 +75,8 @@ namespace asr0421p1.ASR
 
 
             // 设置窗口初始大小
-            this.AppWindow.Resize(new SizeInt32(1220, 340));
+            this.AppWindow.Resize(new SizeInt32(2220, 440));
+
             // 绑定拖动事件
             // 绑定拖动事件到 _GridFirst_
             //_GridFirst_.PointerPressed += GridFirst_PointerPressed;
@@ -92,6 +91,14 @@ namespace asr0421p1.ASR
             _sensorStatusManagerServices.FormChangedAction += Sensor_FromChangedActioned;
             // var status = _sensorStatusManagerServices.CurrentFormStatus;
             _monitorStatusManagerServices = ((App)Application.Current).GetService<IMonitorStatusManagerServices>();
+            _stylusGestureServices = ((App)Application.Current).GetService<IStylusGestureServices>();
+
+
+            if (GlobalConstant.Instance.CurrentMachineType == GlobalConstant.MachineType.SingleDisplayDevice)
+            {
+                CurrentScreenType = ScreenNameEnum.SingleScreen;
+                _stylusGestureServices.LongPressPenUpKey += _stylusGestureServices_LongPressPenUpKey;
+            }
 
             // 初始窗口位置
             var monitor = _monitorStatusManagerServices.GetMonitor(CurrentScreenType);
@@ -112,6 +119,18 @@ namespace asr0421p1.ASR
 
             this.Activated += OnWindowActivated;
 
+
+        }
+
+        private void _stylusGestureServices_LongPressPenUpKey(object? sender, ushort e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                this.Activate();
+                var monitor = _monitorStatusManagerServices.GetMonitor(CurrentScreenType);
+                WindowMove(monitor);
+
+            });
 
         }
 
@@ -158,108 +177,236 @@ namespace asr0421p1.ASR
             }
         }
 
+
+        // 当前正在识别的句子和翻译的临时控件
+        private TextBlock _currentRecognizingTextBlock = null;
+        private TextBlock _currentTranslatingTextBlock = null;
+
         private void InitializeSpeechRecognizer()
         {
             var speechConfig = SpeechConfig.FromSubscription(speechKey, speechRegion);
             speechConfig.SpeechRecognitionLanguage = _currentSourceLanguage;
+            speechConfig.SetProperty(PropertyId.SpeechServiceResponse_PostProcessingOption, "TrueText");
 
             var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
             recognizer = new SpeechRecognizer(speechConfig, audioConfig);
 
-            // 订阅识别事件
-            //recognizer.SessionStarted += (s, e) =>
-            //{
-            //    DispatcherQueue.TryEnqueue(() => StatusTextBlock.Text = "正在识别...");
-            //};
+            recognizer.Recognizing += (s, e) =>
+            {
+                if (e.Result.Reason == ResultReason.RecognizingSpeech)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        // 更新当前正在识别的句子
+                        UpdateCurrentRecognizingText(e.Result.Text);
 
-            //recognizer.Recognizing += (s, e) =>
-            //{
-            //    DispatcherQueue.TryEnqueue(() =>
-            //    {
-            //        if (StatusTextBlock.Text == "识别成功")
-            //        {
-            //            StatusTextBlock.Text = "正在识别...";
-            //        }
-            //    });
-            //};
+                        // 如果需要实时翻译
+                        if (_translationEnabled)
+                        {
+                            _ = UpdateCurrentTranslation(e.Result.Text);
+                        }
+                    });
+                }
+            };
 
             recognizer.Recognized += (s, e) =>
             {
                 if (e.Result.Reason == ResultReason.RecognizedSpeech)
                 {
-                    DispatcherQueue.TryEnqueue(async () =>
+                    DispatcherQueue.TryEnqueue(() =>
                     {
-                        await ProcessRecognitionResult(e.Result.Text);
-                        //StatusTextBlock.Text = "识别成功";
+                        //// 固定显示最终识别结果
+                        //AddFinalRecognizedText($"[{DateTime.Now:HH:mm:ss}] 识别结果: {e.Result.Text}");
+
+                        //// 固定显示最终翻译结果
+                        //if (_translationEnabled)
+                        //{
+                        //    _ = AddFinalTranslation(e.Result.Text);
+                        //}
+
+                        // 清空当前识别和翻译的临时控件
+
+                        _currentRecognizingTextBlock.Foreground = new SolidColorBrush(Colors.White);
+                        _currentRecognizingTextBlock = null;
+                        _currentTranslatingTextBlock = null;
                     });
                 }
             };
         }
 
-        private async Task ProcessRecognitionResult(string text)
+        // 更新当前正在识别的句子（会不断更新）
+        private void UpdateCurrentRecognizingText(string text)
         {
-            // 清除初始提示文本
-            if (ResultsPanel.Children.Count == 1 &&
-                ResultsPanel.Children[0] is RichTextBlock rtb &&
-                rtb.Blocks.FirstOrDefault() is Paragraph p &&
-                p.Inlines.FirstOrDefault() is Run run &&
-                run.Text == "识别结果将显示在这里...")
+            if (_currentRecognizingTextBlock == null)
             {
-                ResultsPanel.Children.Clear();
-            }
-
-            // 添加原始识别结果
-            AddResultText(text, Colors.White, 6, 24);
-
-            // 如果需要翻译
-            if (_translationEnabled && !string.IsNullOrWhiteSpace(text))
-            {
-                try
+                _currentRecognizingTextBlock = new TextBlock
                 {
-                    var translationResult = await TranslateText(text);
-                    if (!string.IsNullOrEmpty(translationResult))
-                    {
-                        AddResultText(translationResult, Color.FromArgb(255, 56, 164, 255), 30, 24);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    AddResultText($"[{DateTime.Now:HH:mm:ss}] 翻译错误: {ex.Message}", Colors.OrangeRed);
-                }
+                    Foreground = new SolidColorBrush(Colors.LightGray),
+                    Margin = new Thickness(0, 0, 0, 6),
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 14,
+                    FontFamily = new FontFamily(_currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                ResultsPanel.Children.Add(_currentRecognizingTextBlock);
             }
-
-            _recognitionResults.Add(text);
-            //ScrollToBottom();
-        }
-        private void AddResultText(string text, Color color, double marginBottom = 6, double fontSize = 16)
-        {
-            // 根据当前源语言选择字体
-            string fontFamily = _currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI";
-
-            // 如果是翻译结果（蓝色文本），使用目标语言选择字体
-            if (color == Colors.Blue)
-            {
-                fontFamily = _currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI";
-            }
-
-            var textBlock = new TextBlock
-            {
-                Text = text,
-                Foreground = new SolidColorBrush(color),
-                Margin = new Thickness(0, 0, 0, marginBottom),
-                TextWrapping = TextWrapping.Wrap,
-                FontSize = fontSize,
-                FontFamily = new FontFamily(fontFamily),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                LineHeight = fontSize * 1.5 // 设置行高为字体大小的1.5倍
-            };
-
-            ResultsPanel.Children.Add(textBlock);
-
-            // 确保UI更新完成后再滚动
-            ResultsPanel.UpdateLayout();
+            _currentRecognizingTextBlock.Text = text;
             ScrollToBottom();
         }
+
+        // 更新当前正在翻译的句子（会不断更新）
+        private async Task UpdateCurrentTranslation(string text)
+        {
+            try
+            {
+                var translationResult = await TranslateText(text);
+                if (!string.IsNullOrEmpty(translationResult))
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (_currentTranslatingTextBlock == null)
+                        {
+                            _currentTranslatingTextBlock = new TextBlock
+                            {
+                                Foreground = new SolidColorBrush(Color.FromArgb(255, 150, 150, 255)),
+                                Margin = new Thickness(0, 0, 0, 6),
+                                TextWrapping = TextWrapping.Wrap,
+                                FontSize = 14,
+                                FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                                HorizontalAlignment = HorizontalAlignment.Left
+                            };
+                            ResultsPanel.Children.Add(_currentTranslatingTextBlock);
+                        }
+                        _currentTranslatingTextBlock.Text = $"[{DateTime.Now:HH:mm:ss}] 实时翻译: {translationResult}";
+                        ScrollToBottom();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"实时翻译错误: {ex.Message}");
+            }
+        }
+
+        // 添加最终翻译结果（固定显示）
+        private async Task AddFinalTranslation(string text)
+        {
+            try
+            {
+                var translationResult = await TranslateText(text);
+                if (!string.IsNullOrEmpty(translationResult))
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        var textBlock = new TextBlock
+                        {
+                            Text = $"[{DateTime.Now:HH:mm:ss}] 翻译结果: {translationResult}",
+                            Foreground = new SolidColorBrush(Color.FromArgb(255, 56, 164, 255)),
+                            Margin = new Thickness(0, 0, 0, 6),
+                            TextWrapping = TextWrapping.Wrap,
+                            FontSize = 16,
+                            FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                            HorizontalAlignment = HorizontalAlignment.Left
+                        };
+                        ResultsPanel.Children.Add(textBlock);
+                        ScrollToBottom();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"翻译错误: {ex.Message}");
+            }
+        }
+
+
+
+
+
+        private void AddRecognizingText(string text)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                var textBlock = new TextBlock
+                {
+                    Text = text,
+                    Foreground = new SolidColorBrush(Colors.LightGray),
+                    Margin = new Thickness(0, 0, 0, 6),
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 14,
+                    FontFamily = new FontFamily(_currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                    HorizontalAlignment = HorizontalAlignment.Left
+                };
+
+                ResultsPanel.Children.Add(textBlock);
+                ScrollToBottom();
+            });
+        }
+
+
+
+        private TextBlock _realTimeTextBlock = null;
+        private TextBlock _realTimeTranslationBlock = null;
+
+        private void UpdateRealTimeResult(string text)
+        {
+            // 创建或更新实时识别文本块
+            if (_realTimeTextBlock == null)
+            {
+                _realTimeTextBlock = new TextBlock
+                {
+                    Foreground = new SolidColorBrush(Colors.LightGray),
+                    Margin = new Thickness(0, 0, 0, 6),
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 14,
+                    FontFamily = new FontFamily(_currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                    HorizontalAlignment = HorizontalAlignment.Left
+                };
+                ResultsPanel.Children.Add(_realTimeTextBlock);
+            }
+            _realTimeTextBlock.Text = text;
+
+            // 如果需要实时翻译
+            if (_translationEnabled)
+            {
+                UpdateRealTimeTranslation(text.Replace("[识别中]", "").Split(':').LastOrDefault()?.Trim());
+            }
+
+            ScrollToBottom();
+        }
+
+        private async Task UpdateRealTimeTranslation(string text)
+        {
+            try
+            {
+                var translationResult = await TranslateText(text);
+                if (!string.IsNullOrEmpty(translationResult))
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        var translationBlock = new TextBlock
+                        {
+                            Text = $"[{DateTime.Now:HH:mm:ss}] 实时翻译: {translationResult}",
+                            Foreground = new SolidColorBrush(Color.FromArgb(255, 150, 150, 255)),
+                            Margin = new Thickness(0, 0, 0, 6),
+                            TextWrapping = TextWrapping.Wrap,
+                            FontSize = 14,
+                            FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                            HorizontalAlignment = HorizontalAlignment.Left
+                        };
+
+                        ResultsPanel.Children.Add(translationBlock);
+                        ScrollToBottom();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"实时翻译错误: {ex.Message}");
+            }
+        }
+
+        // 移除 ProcessRecognitionResult 方法
 
         private async Task<string> TranslateText(string text)
         {
@@ -297,14 +444,29 @@ namespace asr0421p1.ASR
                     // 使用 ChangeView 并等待布局更新完成
                     scrollViewer.UpdateLayout();
                     scrollViewer.ChangeView(null, scrollViewer.ScrollableHeight, null, true);
-
-                    // 或者使用这个替代方案
-                    //scrollViewer.ScrollToVerticalOffset(scrollViewer.ScrollableHeight);
-        }
+                }
             });
         }
 
+        private void AddResultText(string text, Color color, double marginBottom = 6, double fontSize = 16)
+        {
+            var textBlock = new TextBlock
+            {
+                Text = text,
+                Foreground = new SolidColorBrush(color),
+                Margin = new Thickness(0, 0, 0, marginBottom),
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = fontSize,
+                FontFamily = new FontFamily(color == Color.FromArgb(255, 56, 164, 255) ?
+                                 (_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI") :
+                                 (_currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI")),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                LineHeight = fontSize * 1.5
+            };
 
+            ResultsPanel.Children.Add(textBlock);
+            ScrollToBottom();
+        }
         private async void StartButton_Click(object sender, RoutedEventArgs e)
         {
             if (!isRecognizing)
@@ -319,6 +481,10 @@ namespace asr0421p1.ASR
                         InitializeSpeechRecognizer();
                     }
 
+                    // 重置实时文本块
+                    _realTimeTextBlock = null;
+                    _realTimeTranslationBlock = null;
+
                     if (ResultsPanel.Children.Count > 1 ||
                         (ResultsPanel.Children.Count == 1 &&
                         !(ResultsPanel.Children[0] is RichTextBlock rtb &&
@@ -326,7 +492,7 @@ namespace asr0421p1.ASR
                         p.Inlines.FirstOrDefault() is Run run &&
                         run.Text == "识别结果将显示在这里...")))
                     {
-                    ResultsPanel.Children.Clear();
+                        ResultsPanel.Children.Clear();
                         var richTextBlock = new RichTextBlock { FontSize = 16, LineHeight = 30, HorizontalAlignment = HorizontalAlignment.Center };
                         richTextBlock.Blocks.Add(new Paragraph { Inlines = { new Run { Text = "识别结果将显示在这里...", Foreground = new SolidColorBrush(Colors.Wheat) } } });
                         ResultsPanel.Children.Add(richTextBlock);
@@ -339,7 +505,6 @@ namespace asr0421p1.ASR
                 }
                 catch (Exception ex)
                 {
-                    //StatusTextBlock.Text = $"识别失败: {ex.Message}";
                     AddResultText($"[{DateTime.Now:HH:mm:ss}] 识别失败: {ex.Message}", Colors.OrangeRed);
                 }
             }
@@ -361,11 +526,9 @@ namespace asr0421p1.ASR
                 isRecognizing = false;
                 StartButton.Visibility = Visibility.Visible;
                 StopButton.Visibility = Visibility.Collapsed;
-                //StatusTextBlock.Text = "识别结束"; // 停止识别状态
             }
             catch (Exception ex)
             {
-                //StatusTextBlock.Text = $"停止失败: {ex.Message}";
                 AddResultText($"[{DateTime.Now:HH:mm:ss}] 停止失败: {ex.Message}", Colors.OrangeRed);
             }
         }
@@ -525,6 +688,9 @@ namespace asr0421p1.ASR
         {
             // 计算窗口应该放置的顶部位置（显示器底部减去窗口高度和任务栏高度）
             var targetTop = monitor.WindowRect.Bottom - this.AppWindow.Size.Height - 80;
+
+            // 计算窗口应该放置的顶部位置（中间）
+            //var targetTop = monitor.WindowRect.Top + (monitor.WindowRect.Height - this.AppWindow.Size.Height) / 2;
 
             // 计算窗口的水平居中位置
             var targetLeft = monitor.WindowRect.Left + (monitor.WindowRect.Width - this.AppWindow.Size.Width) / 2;
