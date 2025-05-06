@@ -38,7 +38,6 @@ namespace asr0421p1.ASR
         private ASRWindowVm _asrWindowVm;
         private bool _isDragging = false;
 
-        private SpeechRecognizer recognizer;
         private bool isRecognizing = false;
         private readonly List<string> _recognitionResults = new();
 
@@ -56,9 +55,10 @@ namespace asr0421p1.ASR
         private const string translatorRegion = "eastus";
 
         private TextTranslationClient _textTranslationClient;
+        private SpeechRecognizer _recognizer;
         private string _currentSourceLanguage = "zh-CN";
         private string _currentTargetLanguage = "en-US";
-        private bool _translationEnabled = false;
+        private bool _translationEnabled = true;
         ISensorStatusManagerServices _sensorStatusManagerServices;
         IMonitorStatusManagerServices _monitorStatusManagerServices;
         IStylusGestureServices _stylusGestureServices;
@@ -81,15 +81,15 @@ namespace asr0421p1.ASR
             // 绑定拖动事件到 _GridFirst_
             //_GridFirst_.PointerPressed += GridFirst_PointerPressed;
 
-            UpdateLanguageSettingsFromComboBox();
+            // UpdateLanguageSettingsFromComboBox();
 
             InitializeSpeechRecognizer();
             InitializeTranslationClient();
 
-            TranslationDirectionComboBox.SelectionChanged += TranslationDirectionComboBox_SelectionChanged;
+
             _sensorStatusManagerServices = ((App)Application.Current).GetService<ISensorStatusManagerServices>();
             _sensorStatusManagerServices.FormChangedAction += Sensor_FromChangedActioned;
-            // var status = _sensorStatusManagerServices.CurrentFormStatus;
+
             _monitorStatusManagerServices = ((App)Application.Current).GetService<IMonitorStatusManagerServices>();
             _stylusGestureServices = ((App)Application.Current).GetService<IStylusGestureServices>();
 
@@ -108,7 +108,7 @@ namespace asr0421p1.ASR
             if (CurrentScreenType == ScreenNameEnum.ScreenC)
             {
                 // 设置C屏默认选中"中文 > 英语"
-                TranslationDirectionComboBox.SelectedIndex = 1;
+                //TranslationDirectionComboBox.SelectedIndex = 1;
             }
             // 如果是C屏且不是Tent模式，则隐藏窗口
             if (CurrentScreenType == ScreenNameEnum.ScreenC &&
@@ -117,11 +117,75 @@ namespace asr0421p1.ASR
                 this.AppWindow.Hide();
             }
 
-           // this.Activated += OnWindowActivated;
+            //this.Activated += OnWindowActivated;
+
+            TranslationHelper.TranslationAction += OnTranslation;
+        }
+
+        // 在类级别添加一个变量来跟踪最后一次完整翻译
+        private string _lastFinalTranslation = string.Empty;
+        // 判断是否是最终确认的句子（而非中间结果）
+        //bool isFinal = content1.EndsWith("。") || content1.EndsWith(".") || content1.EndsWith("?") || content1.EndsWith("？");
+
+        //        if (isFinal)
+        //        {
+        //            // 如果是最终句子，更新最后翻译并显示
+        //            _lastFinalTranslation = translationResult;
+        //            _currentRecognizingTextBlock.Text = _lastFinalTranslation;
+        //        }
+        //        else
+        //        {
+        //            // 如果是中间结果，只显示在临时文本块中
+        //            _currentRecognizingTextBlock.Text = translationResult;
+        //        }
+
+        /// ScreenNameEnum 当前窗口是什么。
+        /// true 是目标语言，false 是源语言
+        private async void OnTranslation(ScreenNameEnum thisScerrn, bool istarget, string content1)
+        {
+            if (thisScerrn == CurrentScreenType)
+            {
+                return;
+            }
+            //C 中到英
+            if (thisScerrn == ScreenNameEnum.ScreenC)
+            {
+                _currentTargetLanguage = "en-US";
+            }
+            else
+            {
+                _currentTargetLanguage = "zh-CN";
+            }
+            //修改源语言和目标语音
+            var translationResult = await TranslateText(content1);
+
+            //true 是目标语言，false 是源语言
+            //true是要把这个语言翻译到另一台屏幕上
+            if (istarget)
+            {
+                if (_currentRecognizingTextBlock == null)
+                {
+                    _currentRecognizingTextBlock = new TextBlock
+                    {
+                        Foreground = new SolidColorBrush(Colors.Wheat),
+                        Margin = new Thickness(0, 0, 0, 12),
+                        TextWrapping = TextWrapping.Wrap,
+                        FontSize = 20,
+                        FontFamily = new FontFamily(_currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                        HorizontalAlignment = HorizontalAlignment.Left
+                    };
+                    ResultsPanel.Children.Add(_currentRecognizingTextBlock);
+                }
+                _currentRecognizingTextBlock.Text = $"翻译为{_currentTargetLanguage}: {translationResult}";
+                //_currentRecognizingTextBlock.Text = translationResult;
+
+
+                ScrollToBottom();
+            }
+ 
 
 
         }
-
         private void _stylusGestureServices_LongPressPenUpKey(object? sender, ushort e)
         {
             DispatcherQueue.TryEnqueue(() =>
@@ -134,48 +198,18 @@ namespace asr0421p1.ASR
 
         }
 
-        private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
-        {
-            this.Activated -= OnWindowActivated;
+        //private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
+        //{
+        //    this.Activated -= OnWindowActivated;
 
-            // 模拟点击开始按钮
-            StartButton_Click(null, null);
-        }
+        //}
 
-        private void UpdateLanguageSettingsFromComboBox()
-        {
-            if (TranslationDirectionComboBox.SelectedItem is ComboBoxItem selectedItem)
-            {
-                var direction = selectedItem.DataContext as string;
-                if (!string.IsNullOrEmpty(direction))
-                {
-                    var languages = direction.Split('>');
-                    if (languages.Length == 2)
-                    {
-                        _currentSourceLanguage = languages[0];
-                        _currentTargetLanguage = languages[1];
-                        _translationEnabled = _currentSourceLanguage != _currentTargetLanguage;
-                    }
-                }
-            }
-        }
         private void InitializeTranslationClient()
         {
             AzureKeyCredential credential = new(translatorKey);
             _textTranslationClient = new TextTranslationClient(credential, translatorRegion);
         }
 
-        private void TranslationDirectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            UpdateLanguageSettingsFromComboBox();
-
-            // 更新语音识别语言
-            if (recognizer != null)
-            {
-                recognizer.Dispose();
-                InitializeSpeechRecognizer();
-            }
-        }
 
 
         // 当前正在识别的句子和翻译的临时控件
@@ -185,99 +219,77 @@ namespace asr0421p1.ASR
         private void InitializeSpeechRecognizer()
         {
             var speechConfig = SpeechConfig.FromSubscription(speechKey, speechRegion);
-            speechConfig.SpeechRecognitionLanguage = _currentSourceLanguage;
+            var autoDetectSourceLanguageConfig = AutoDetectSourceLanguageConfig.FromLanguages(new string[] { "en-US", "zh-CN" });
             speechConfig.SetProperty(PropertyId.SpeechServiceResponse_PostProcessingOption, "TrueText");
+            speechConfig.SetProperty(PropertyId.SpeechServiceConnection_LanguageIdMode, "Continuous");
 
             var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
-            recognizer = new SpeechRecognizer(speechConfig, audioConfig);
-
-            recognizer.Recognizing += (s, e) =>
-            {
-                if (e.Result.Reason == ResultReason.RecognizingSpeech)
-                {
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        // 更新当前正在识别的句子
-                        UpdateCurrentRecognizingText(e.Result.Text);
-
-                        // 如果需要实时翻译
-                        if (_translationEnabled)
-                        {
-                            _ = UpdateCurrentTranslation(e.Result.Text);
-                        }
-                    });
-                }
-            };
-
-            recognizer.Recognized += (s, e) =>
-            {
-                if (e.Result.Reason == ResultReason.RecognizedSpeech)
-                {
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        // 清空当前识别和翻译的临时控件
-                        _currentRecognizingTextBlock = null;
-                        _currentTranslatingTextBlock = null;
-                    });
-                }
-            };
+            //  _recognizer = new SpeechRecognizer(speechConfig, audioConfig, autoDetectSourceLanguageConfig);
+            _recognizer = new SpeechRecognizer(speechConfig, autoDetectSourceLanguageConfig, audioConfig);
         }
-
 
 
         // 更新当前正在识别的句子（会不断更新）
         private void UpdateCurrentRecognizingText(string text)
         {
+            //原语言，另一个窗口来说是目标语言  // true 是目标语言，false 是源语言
+            TranslationHelper.TranslationAction.Invoke(CurrentScreenType, true, text);
+
             if (_currentRecognizingTextBlock == null)
             {
                 _currentRecognizingTextBlock = new TextBlock
                 {
-                    Foreground = new SolidColorBrush(Colors.White),
+                    Foreground = new SolidColorBrush(Colors.Red),
                     Margin = new Thickness(0, 0, 0, 12),
                     TextWrapping = TextWrapping.Wrap,
-                    FontSize = 24,
+                    FontSize = 20,
                     FontFamily = new FontFamily(_currentSourceLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
-                    HorizontalAlignment = HorizontalAlignment.Center
+                    HorizontalAlignment = HorizontalAlignment.Left
                 };
                 ResultsPanel.Children.Add(_currentRecognizingTextBlock);
             }
-            _currentRecognizingTextBlock.Text = text;
+            _currentRecognizingTextBlock.Text = $"讲话者是{CurrentScreenType},对面翻译为{_currentTargetLanguage}: {text}";
             ScrollToBottom();
         }
 
         // 更新当前正在翻译的句子（会不断更新）
-        private async Task UpdateCurrentTranslation(string text)
+        //private async void UpdateCurrentTranslation(string text)
+        //{
+        //    //text 语音识别结果
+
+        //    //这是我的目标语言。但是对于另一个程序来说，这是源语言。
+        //    // true 是目标语言，false 是源语言
+        //    TranslationHelper.TranslationAction.Invoke(CurrentScreenType, false, text);
+
+        //}
+
+        private void TargetTextUpdate(string targetText)
         {
-            try
+            if (!string.IsNullOrEmpty(targetText))
             {
-                var translationResult = await TranslateText(text);
-                if (!string.IsNullOrEmpty(translationResult))
+                DispatcherQueue.TryEnqueue(() =>
                 {
-                    DispatcherQueue.TryEnqueue(() =>
+                    if (_currentTranslatingTextBlock == null)
                     {
-                        if (_currentTranslatingTextBlock == null)
+                        _currentTranslatingTextBlock = new TextBlock
                         {
-                            _currentTranslatingTextBlock = new TextBlock
-                            {
-                                Foreground = new SolidColorBrush(Color.FromArgb(255, 56, 164, 255)),
-                                Margin = new Thickness(0, 0, 0, 36),
-                                TextWrapping = TextWrapping.Wrap,
-                                FontSize = 24,
-                                FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
-                                HorizontalAlignment = HorizontalAlignment.Center
-                            };
-                            ResultsPanel.Children.Add(_currentTranslatingTextBlock);
-                        }
-                        _currentTranslatingTextBlock.Text = translationResult;
-                        ScrollToBottom();
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                AddResultText($"[{DateTime.Now:HH:mm:ss}] 实时翻译错误: {ex.Message}", Colors.OrangeRed);
+                            Foreground = new SolidColorBrush(Color.FromArgb(255, 56, 164, 255)),
+                            Margin = new Thickness(0, 0, 0, 36),
+                            TextWrapping = TextWrapping.Wrap,
+                            FontSize = 20,
+                            FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
+                            HorizontalAlignment = HorizontalAlignment.Left
+                        };
+                        ResultsPanel.Children.Add(_currentTranslatingTextBlock);
+                    }
+                    string prefix = _currentTargetLanguage.StartsWith("zh") ? ChinesePrefix : EnglishPrefix;
+                    _currentTranslatingTextBlock.Text = prefix + ":" + targetText;
+                    ScrollToBottom();
+                });
             }
         }
+
+
         private async Task<string> TranslateText(string text)
         {
             try
@@ -285,10 +297,10 @@ namespace asr0421p1.ASR
                 // 将单个字符串包装为包含一个元素的列表
                 var content = new List<string> { text };
 
+                //todo：源语言可为空 ，目标语言需要指定
                 Response<IReadOnlyList<TranslatedTextItem>> response = await _textTranslationClient.TranslateAsync(
                     targetLanguage: _currentTargetLanguage,
-                    content: content,  // 现在传递的是List<string>
-                    sourceLanguage: _currentSourceLanguage);
+                    content: content);  // 现在传递的是List<string>
 
                 if (response.Value != null && response.Value.Count > 0)
                 {
@@ -337,77 +349,14 @@ namespace asr0421p1.ASR
             ResultsPanel.Children.Add(textBlock);
             ScrollToBottom();
         }
-        private async void StartButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!isRecognizing)
-            {
-                try
-                {
-                    UpdateLanguageSettingsFromComboBox();
-
-                    if (recognizer != null)
-                    {
-                        recognizer.Dispose();
-                        InitializeSpeechRecognizer();
-                    }
-
-                    // 重置实时文本块
-                    _currentRecognizingTextBlock = null;
-                    _currentTranslatingTextBlock = null;
-
-                    if (ResultsPanel.Children.Count > 1 ||
-                        (ResultsPanel.Children.Count == 1 &&
-                        !(ResultsPanel.Children[0] is RichTextBlock rtb &&
-                        rtb.Blocks.FirstOrDefault() is Paragraph p &&
-                        p.Inlines.FirstOrDefault() is Run run &&
-                        run.Text == "识别结果将显示在这里...")))
-                    {
-                        ResultsPanel.Children.Clear();
-   
-                    }
-
-                    await recognizer.StartContinuousRecognitionAsync();
-                    isRecognizing = true;
-                    StartButton.Visibility = Visibility.Collapsed;
-                    StopButton.Visibility = Visibility.Visible;
-                }
-                catch (Exception ex)
-                {
-                    AddResultText($"[{DateTime.Now:HH:mm:ss}] 识别失败: {ex.Message}", Colors.OrangeRed);
-                }
-            }
-        }
-
-        private async void StopButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (isRecognizing)
-            {
-                await StopRecognition();
-            }
-        }
-
-        private async Task StopRecognition()
-        {
-            try
-            {
-                await recognizer.StopContinuousRecognitionAsync();
-                isRecognizing = false;
-                StartButton.Visibility = Visibility.Visible;
-                StopButton.Visibility = Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
-                AddResultText($"[{DateTime.Now:HH:mm:ss}] 停止失败: {ex.Message}", Colors.OrangeRed);
-            }
-        }
 
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             if (isRecognizing)
             {
-                await StopRecognition();
+                await StopRecording();
             }
-            recognizer?.Dispose();
+            _recognizer?.Dispose();
             this.Close();
         }
 
@@ -579,6 +528,128 @@ namespace asr0421p1.ASR
             this.Activate();
         }
 
+
+        #endregion
+
+        #region 新加按钮
+
+
+        // 在类顶部定义
+        private const string ChinesePrefix = "[CN] ";
+        private const string EnglishPrefix = "[EN] ";
+
+        // 修改按钮事件处理
+        private async void ChineseToEnglishButton_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+
+            _translationEnabled = true;
+            ChineseToEnglishButton.Background = new SolidColorBrush(Colors.LightBlue);
+            ChineseToEnglishButton.Content = "Speaking...";
+            await StartRecording();
+        }
+
+        //private async void EnglishToChineseButton_PointerPressed(object sender, PointerRoutedEventArgs e)
+        //{
+        //    _currentSourceLanguage = "en-US";
+        //    _currentTargetLanguage = "zh-CN";
+        //    _translationEnabled = true;
+        //    EnglishToChineseButton.Background = new SolidColorBrush(Colors.LightBlue);
+
+        //    await StartRecording();
+        //}
+
+        private async void Button_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+
+            ChineseToEnglishButton.Content = "Start";
+            ChineseToEnglishButton.Background = new SolidColorBrush(Color.FromArgb(255, 51, 51, 51));
+
+            await StopRecording();                  
+        }
+
+        private async Task StartRecording()
+        {
+            if (!isRecognizing)
+            {
+                try
+                {
+                    // 重置实时文本块
+                    _currentRecognizingTextBlock = null;
+                    _currentTranslatingTextBlock = null;
+
+
+                    ResultsPanel.Children.Clear();
+
+
+                    // 设置识别事件
+                    _recognizer.Recognizing += (s, e) =>
+                    {
+                        if (e.Result.Reason == ResultReason.RecognizingSpeech)
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                UpdateCurrentRecognizingText(e.Result.Text);
+                                //if (_translationEnabled)
+                                //{
+                                //    UpdateCurrentTranslation(e.Result.Text);
+
+                                //}
+                            });
+                        }
+                    };
+
+                    _recognizer.Recognized += (s, e) =>
+                    {
+                        if (e.Result.Reason == ResultReason.RecognizedSpeech)
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                _currentRecognizingTextBlock = null;
+                                _currentTranslatingTextBlock = null;
+                            });
+                        }
+                    };
+
+                    await _recognizer.StartContinuousRecognitionAsync();
+                    isRecognizing = true;
+                    UpdateStatusText("录音中...", Colors.Lime);
+                }
+                catch (Exception ex)
+                {
+                    AddResultText($"[{DateTime.Now:HH:mm:ss}] 识别失败: {ex.Message}", Colors.OrangeRed);
+                    UpdateStatusText("录音失败", Colors.Red);
+                }
+            }
+        }
+
+        private async Task StopRecording()
+        {
+            if (isRecognizing)
+            {
+                try
+                {
+                    await _recognizer.StopContinuousRecognitionAsync();
+                    isRecognizing = false;
+                    UpdateStatusText("就绪", Colors.White);
+                }
+                catch (Exception ex)
+                {
+                    AddResultText($"[{DateTime.Now:HH:mm:ss}] 停止失败: {ex.Message}", Colors.OrangeRed);
+                    UpdateStatusText("停止失败", Colors.Red);
+                }
+            }
+        }
+
+        private void UpdateStatusText(string text, Color color)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                StatusTextBlock.Text = text;
+                StatusTextBlock.Foreground = new SolidColorBrush(color);
+            });
+        }
+
+        // 删除不再需要的 StartButton_Click 和 StopButton_Click 方法
 
         #endregion
 

@@ -9,27 +9,49 @@
     mc:Ignorable="d" 
     x:Name="_AsrWindow_" 
     Title="ASRWindow">
+
     <Grid Background="#171E24" x:Name="_MainGrid_">
+        <Grid.Resources>
+            <Storyboard x:Name="BreathAnimation" x:Key="BreathAnimation">
+                <ColorAnimation
+            Storyboard.TargetProperty="(Button.Background).(SolidColorBrush.Color)"
+            From="#FF00FF00" 
+            To="#3300FF00"
+            Duration="0:0:1.5"
+            RepeatBehavior="Forever"
+            AutoReverse="True">
+                    <ColorAnimation.EasingFunction>
+                        <CircleEase EasingMode="EaseInOut"/>
+                    </ColorAnimation.EasingFunction>
+                </ColorAnimation>
+            </Storyboard>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!--翻译方向选择区域-->
 
-        <Grid  x:Name="TitleBar"
-                   Background="Transparent"
-                   Margin="10"
-                   PointerPressed="DragArea_PointerPressed"
-                   PointerReleased="DragArea_PointerReleased"
-                   PointerMoved="DragArea_PointerMoved">
+        <Grid x:Name="TitleBar"
+              Background="Transparent"
+              Margin="10"
+              PointerPressed="DragArea_PointerPressed"
+              PointerReleased="DragArea_PointerReleased"
+              PointerMoved="DragArea_PointerMoved">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <ComboBox Name="TranslationDirectionComboBox"  
+            <StackPanel Grid.Column="0" >
+                <TextBlock x:Name="StatusTextBlock" Foreground="White" Margin="10,0"/>
+
+            </StackPanel>
+            <!--<ComboBox Name="TranslationDirectionComboBox"  
                           Grid.Column="0"
                           HorizontalAlignment="Left"
                           Foreground="White"
@@ -41,28 +63,30 @@
                 <ComboBoxItem Content="中文 &gt; 英语" Foreground="White" Background="#333333" DataContext="zh-CN>en-US" />
                 <ComboBoxItem Content="中文 &gt; 中文" Foreground="White" Background="#333333" DataContext="zh-CN>zh-CN"/>
                 <ComboBoxItem Content="英语 &gt; 英语" Foreground="White" Background="#333333" DataContext="en-US>en-US"/>
-            </ComboBox>
+            </ComboBox>-->
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
 
                 <!--开始录音按钮-->
                 <!--Click="StartRecording"  x:Name="btnStart"-->
-                <Button Content="▶" FontSize="14" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"
+                <!--<Button Content="▶" FontSize="14" Width="35" Height="35"  Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center"
                             Visibility="Visible"
-                            x:Name="StartButton" Click="StartButton_Click"/>
+                            x:Name="StartButton" Click="StartButton_Click"/>-->
 
 
                 <!--停止录音按钮-->
                 <!--x:Name="btnStop" Click="StopRecording"-->
-                <Button Content="l l" FontWeight="ExtraBlack" Width="35" Height="35" Padding="0"  BorderThickness="0" VerticalAlignment="Center"
+                <!--<Button Content="l l" FontWeight="ExtraBlack" Width="35" Height="35" Padding="0"  BorderThickness="0" VerticalAlignment="Center"
                             Visibility="Collapsed" FontSize="14"
-                            x:Name="StopButton" Click="StopButton_Click"/>
+                            x:Name="StopButton" Click="StopButton_Click"/>-->
 
                 <!--Smart按钮-->
-                <Button FontSize="14" Width="35" Height="35" Padding="0" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center">
-                    <!--<Image Source="/Assets/SmartNote.png" Stretch="Uniform"/>-->
+                <!--<Button FontSize="14" Width="35" Height="35" Padding="0" Margin="10 0" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center">
+                    -->
+                <!--<Image Source="/Assets/SmartNote.png" Stretch="Uniform"/>-->
+                <!--
                     <Image Source="ms-appx:///Assets/SmartNote.svg" Width="19" Height="19"/>
-                </Button>
+                </Button>-->
 
                 <!--关闭按钮-->
                 <Button Content="✕" FontSize="16" FontWeight="ExtraBold" Padding="0"  Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
@@ -71,7 +95,7 @@
 
         </Grid>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="ResultsPanel">
                 <RichTextBlock FontSize="16" LineHeight="30" HorizontalAlignment="Center">
                     <Paragraph>
@@ -82,9 +106,46 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!--<StackPanel Grid.Row="2" Background="#333333">
+        <!--<StackPanel Grid.Row="1" Background="#333333" Opacity="0.5">
             <TextBlock x:Name="StatusTextBlock" Foreground="White" Margin="10,0"/>
+            
         </StackPanel>-->
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Background="Transparent">
+            <!--中译英按钮-->
+            <Grid>
+
+                <Button x:Name="ChineseToEnglishButton" Content="开始" Width="80" Height="40"
+                        Padding="0" Margin="10 " Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center">
+
+                    <!--<Image Source="ms-appx:///Assets/SmartNote.svg" Stretch="Fill" Margin="6"/>-->
+                </Button>
+                <Border  Background="Transparent" 
+                         Width="{Binding Path=ActualWidth, ElementName=ChineseToEnglishButton}"
+                         Height="{Binding Path=ActualHeight, ElementName=ChineseToEnglishButton}"
+                         BorderThickness="1" VerticalAlignment="Center"
+                         PointerPressed="ChineseToEnglishButton_PointerPressed"
+                         PointerReleased="Button_PointerReleased">
+                </Border>
+            </Grid>
+
+            <!--英译中按钮-->
+            <!--<Grid>
+                <Button x:Name="EnglishToChineseButton" Width="80" Height="40" Content="英→中"
+                    Padding="0" Margin="10 " Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center">
+
+                    --><!--<Image Source="ms-appx:///Assets/SmartNote.svg" Stretch="Fill" Margin="6"/>--><!--
+                </Button>
+                <Border  Background="Transparent" 
+                     Width="{Binding Path=ActualWidth, ElementName=EnglishToChineseButton}"
+                     Height="{Binding Path=ActualHeight, ElementName=EnglishToChineseButton}"
+                     BorderThickness="1" VerticalAlignment="Center"
+                     PointerPressed="EnglishToChineseButton_PointerPressed"
+                     PointerReleased="Button_PointerReleased">
+                </Border>
+            </Grid>-->
+        </StackPanel>
     </Grid>
 
 </Window>
+ 

@@ -40,6 +40,7 @@ namespace asr0421p1
         private ISensorStatusManagerServices _sensorStatusManagerServices;
         private IStylusGestureServices _stylusGestureServices;
 
+   
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -69,7 +70,7 @@ namespace asr0421p1
             _stylusGestureServices.Init();
         }
 
-       
+
 
         public T GetService<T>() where T : notnull
         {
@@ -82,23 +83,9 @@ namespace asr0421p1
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             GlobalConstant.Instance.SystemMachineType();
-
-            //if (GlobalConstant.Instance.CurrentMachineType != GlobalConstant.MachineType.DualDisplayDevice)
-            //{
-            //    m_TentwindowB = new ASRWindow(ScreenNameEnum.SingleScreen);
-            //    m_TentwindowB.Activate();
-            //}
-            //else
-            //{
-            //    m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
-            //    m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
-            //    m_TentwindowB.Activate();
-            //    m_TentwindowC.Activate();
-            //}
-
             // 总是创建主窗口
             m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
-        
+
 
 
             // 双屏模式下创建C屏窗口但默认隐藏
@@ -106,7 +93,6 @@ namespace asr0421p1
             {
                 m_TentwindowB.Activate();
                 m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
-                // 默认隐藏C屏窗口
             }
 
         }
