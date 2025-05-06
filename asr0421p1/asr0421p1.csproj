@@ -66,7 +66,9 @@
     <Folder Include="Internal\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\UniversalLib\UniversalLib.csproj" />
+    <Reference Include="UniversalLib">
+      <HintPath>..\New folder\UniversalLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Content Update="Assets\SmartNote.png">
