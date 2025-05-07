@@ -59,7 +59,6 @@
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -90,18 +89,36 @@
 
         </Grid>
 
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="ResultsPanel">
-                <RichTextBlock FontSize="16" LineHeight="30" HorizontalAlignment="Center">
-                    <Paragraph>
-                        <Run Text="识别结果将显示在这里..." Foreground="Wheat" FontSize="16"/>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                    </Paragraph>
-                </RichTextBlock>
-            </StackPanel>
-        </ScrollViewer>
+            <ListView  x:Name="ResultsPanel">
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel VirtualizingStackPanel.VirtualizationMode="Recycling" />
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.Template>
+                    <ControlTemplate TargetType="ListView">
+                        <ScrollViewer 
+                x:Name="ScrollViewer"
+                VerticalScrollBarVisibility="Auto"
+                IsDeferredScrollingEnabled="True">
+                            <!-- 延迟滚动减少卡顿 -->
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ListView.Template>
+            </ListView>                     
+            
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Background="Transparent">
+        </Grid>
+      
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Background="Transparent" VerticalAlignment="Center">
             <!--中译英按钮-->
             <Grid >
                 <!-- 主按钮 -->
@@ -118,6 +135,8 @@
                          PointerExited="Button_PointerReleased">
                 </Border>
             </Grid>
+
+            <TextBlock x:Name="currentASRresultTextBlock" Foreground="White" Margin="10,0 0 0" TextWrapping="Wrap" FontSize="20"  HorizontalAlignment="Left" VerticalAlignment="Center"/>
         </StackPanel>
     </Grid>
 

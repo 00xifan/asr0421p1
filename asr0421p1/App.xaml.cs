@@ -98,10 +98,8 @@ namespace asr0421p1
         }
 
 
-        private ASRWindow? m_TentwindowB; 
-
-        private ASRWindow? m_TentwindowC; //MAIN
-
+        public static ASRWindow m_TentwindowB { get; private set; }
+        public static ASRWindow m_TentwindowC { get; private set; }
 
     }
 }

@@ -10,8 +10,9 @@ namespace asr0421p1
     public class TranslationHelper
     {
         /// <summary>
-        /// true 是目标语言，false 是源语言
+        /// ScreenNameEnum 由哪个屏幕的客户端发起的， string ASR的识别结果。
         /// </summary>
-        public static Action<ScreenNameEnum, bool, string> TranslationAction;
+        public static Action<ScreenNameEnum, string> TranslationAction;
+        public static Action<ScreenNameEnum, string> TranslationEndAction;
     }
 }
