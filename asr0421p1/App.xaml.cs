@@ -84,23 +84,23 @@ namespace asr0421p1
         {
             GlobalConstant.Instance.SystemMachineType();
             // 总是创建主窗口
-            m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
+            m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
 
 
 
-            // 双屏模式下创建C屏窗口但默认隐藏
+            // 双屏模式下创建B屏窗口但默认隐藏
             if (GlobalConstant.Instance.CurrentMachineType == GlobalConstant.MachineType.DualDisplayDevice)
             {
-                m_TentwindowB.Activate();
-                m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
+                m_TentwindowC.Activate();
+                m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
             }
 
         }
 
 
-        private ASRWindow? m_TentwindowB;  //MAIN
+        private ASRWindow? m_TentwindowB; 
 
-        private ASRWindow? m_TentwindowC;
+        private ASRWindow? m_TentwindowC; //MAIN
 
 
     }
