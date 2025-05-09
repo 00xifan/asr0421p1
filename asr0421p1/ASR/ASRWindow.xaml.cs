@@ -156,8 +156,8 @@ namespace asr0421p1.ASR
                     FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
                     HorizontalAlignment = HorizontalAlignment.Left,
                     Text = CurrentScreenType == ScreenNameEnum.ScreenC
-             ? $"录音: {content1}"
-             : $"Record: {content1}"
+             ? $"我: {content1}"
+             : $"I: {content1}"
                 };
 
                 //ResultsPanel.ScrollIntoView(_currentTranslatingTextBlock);
@@ -246,10 +246,12 @@ namespace asr0421p1.ASR
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 20,
                 FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
-                HorizontalAlignment = HorizontalAlignment.Left,
+                HorizontalAlignment = CurrentScreenType == ScreenNameEnum.ScreenC
+                ?HorizontalAlignment.Left
+                :HorizontalAlignment.Right,
                 Text = CurrentScreenType == ScreenNameEnum.ScreenC
-              ? $"翻译成功: {translationResult}"
-              : $"Translation Successfull: {translationResult}"
+              ? $"{translationResult} :他"
+              : $"{translationResult} :He"
             };
 
             ResultsPanel.Items.Add(_currentTranslatingTextBlock);
@@ -511,7 +513,7 @@ namespace asr0421p1.ASR
         }
         #endregion
 
-        #region 窗口缩放（右下角 Thumb）
+        #region 窗口缩放
 
         //private void GridFirst_PointerPressed(object sender, PointerRoutedEventArgs e)
         //{
