@@ -77,7 +77,7 @@ namespace asr0421p1.ASR
 
 
             // 设置窗口初始大小
-            this.AppWindow.Resize(new SizeInt32(2220, 640));
+            this.AppWindow.Resize(new SizeInt32(1800, 640));
 
             //InitializeSpeechRecognizer();
 
@@ -246,9 +246,7 @@ namespace asr0421p1.ASR
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 20,
                 FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
-                HorizontalAlignment = CurrentScreenType == ScreenNameEnum.ScreenC
-                ?HorizontalAlignment.Left
-                :HorizontalAlignment.Right,
+                HorizontalAlignment = HorizontalAlignment.Right,
                 Text = CurrentScreenType == ScreenNameEnum.ScreenC
               ? $"{translationResult} :他"
               : $"{translationResult} :He"
