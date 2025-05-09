@@ -107,7 +107,9 @@ namespace asr0421p1.ASR
             {
                 // 设置C屏默认选中"中文 > 英语"
                 //TranslationDirectionComboBox.SelectedIndex = 1;
+               
             }
+            
             // 如果是B屏且不是Tent模式，则隐藏窗口
             if (CurrentScreenType == ScreenNameEnum.ScreenB &&
                 _sensorStatusManagerServices.CurrentFormStatus != SENSOR_FORM.FF_TENT)
@@ -156,8 +158,8 @@ namespace asr0421p1.ASR
                     FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
                     HorizontalAlignment = HorizontalAlignment.Left,
                     Text = CurrentScreenType == ScreenNameEnum.ScreenC
-             ? $"我: {content1}"
-             : $"I: {content1}"
+             ? $"我 : {content1}"
+             : $"I : {content1}"
                 };
 
                 //ResultsPanel.ScrollIntoView(_currentTranslatingTextBlock);
@@ -248,8 +250,8 @@ namespace asr0421p1.ASR
                 FontFamily = new FontFamily(_currentTargetLanguage.StartsWith("zh") ? "微软雅黑" : "Segoe UI"),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Text = CurrentScreenType == ScreenNameEnum.ScreenC
-              ? $"{translationResult} :他"
-              : $"{translationResult} :He"
+              ? $"{translationResult} : 参会者"
+              : $"{translationResult} : Attendee"
             };
 
             ResultsPanel.Items.Add(_currentTranslatingTextBlock);

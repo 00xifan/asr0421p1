@@ -85,6 +85,7 @@ namespace asr0421p1
             GlobalConstant.Instance.SystemMachineType();
             // 总是创建主窗口
             m_TentwindowC = new ASRWindow(ScreenNameEnum.ScreenC);
+            //m_TentwindowC.Statuslock= new TextBlock() {Text="Lenovo" };
 
 
 
@@ -93,6 +94,7 @@ namespace asr0421p1
             {
                 m_TentwindowC.Activate();
                 m_TentwindowB = new ASRWindow(ScreenNameEnum.ScreenB);
+                //m_TentwindowB.Statuslock = new TextBlock() { Text = "Geo" };
             }
 
         }

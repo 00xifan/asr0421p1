@@ -81,6 +81,7 @@
                 <TextBlock x:Name="StatusTextBlock" Foreground="White" Margin="10,0"/>
             </StackPanel>
 
+            <TextBlock Grid.Column="1" HorizontalTextAlignment="Center" x:Name="Statuslock" Foreground="White"  FontSize="24" FontWeight="ExtraBold" Text="AI Translator" Margin="-5 0 0 0"/>
             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
                 <!--关闭按钮-->
                 <Button Content="✕" FontSize="16" FontWeight="ExtraBold" Padding="0"  Width="35" Height="35" Foreground="#FFFFFF" Background="#333" BorderThickness="0" VerticalAlignment="Center" 
